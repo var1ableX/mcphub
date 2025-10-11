@@ -11,8 +11,9 @@ describe('Group Persistence Integration Tests', () => {
   const testSettingsPath = path.join(__dirname, '..', 'fixtures', 'test_mcp_settings.json');
   let originalGetConfigFilePath: any;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     // Mock getConfigFilePath to use our test settings file
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const pathModule = require('../../src/utils/path.js');
     originalGetConfigFilePath = pathModule.getConfigFilePath;
     pathModule.getConfigFilePath = (filename: string) => {
@@ -50,6 +51,7 @@ describe('Group Persistence Integration Tests', () => {
   afterAll(() => {
     // Restore original function
     if (originalGetConfigFilePath) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const pathModule = require('../../src/utils/path.js');
       pathModule.getConfigFilePath = originalGetConfigFilePath;
     }
