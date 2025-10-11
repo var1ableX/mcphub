@@ -36,11 +36,17 @@ export class DataServicex implements DataService {
     // Use passed user parameter if available, otherwise fall back to context
     const currentUser = user || UserContextService.getInstance().getCurrentUser();
     if (!currentUser || currentUser.isAdmin) {
+      // Admin users can modify all settings
       const result = { ...all };
-      result.users = newSettings.users;
-      result.systemConfig = newSettings.systemConfig;
+      // Merge all fields, using newSettings values when present
+      if (newSettings.users !== undefined) result.users = newSettings.users;
+      if (newSettings.mcpServers !== undefined) result.mcpServers = newSettings.mcpServers;
+      if (newSettings.groups !== undefined) result.groups = newSettings.groups;
+      if (newSettings.systemConfig !== undefined) result.systemConfig = newSettings.systemConfig;
+      if (newSettings.userConfigs !== undefined) result.userConfigs = newSettings.userConfigs;
       return result;
     } else {
+      // Non-admin users can only modify their own userConfig
       const result = JSON.parse(JSON.stringify(all));
       if (!result.userConfigs) {
         result.userConfigs = {};

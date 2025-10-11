@@ -22,7 +22,19 @@ export class DataServiceImpl implements DataService {
   }
 
   mergeSettings(all: McpSettings, newSettings: McpSettings, _user?: IUser): McpSettings {
-    return newSettings;
+    // Merge all fields from newSettings into all, preserving fields not present in newSettings
+    return {
+      ...all,
+      ...newSettings,
+      // Ensure arrays and objects are properly handled
+      users: newSettings.users !== undefined ? newSettings.users : all.users,
+      mcpServers: newSettings.mcpServers !== undefined ? newSettings.mcpServers : all.mcpServers,
+      groups: newSettings.groups !== undefined ? newSettings.groups : all.groups,
+      systemConfig:
+        newSettings.systemConfig !== undefined ? newSettings.systemConfig : all.systemConfig,
+      userConfigs:
+        newSettings.userConfigs !== undefined ? newSettings.userConfigs : all.userConfigs,
+    };
   }
 
   getPermissions(_user: IUser): string[] {
