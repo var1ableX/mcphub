@@ -24,6 +24,10 @@ import { getServerDao, ServerConfigWithName } from '../dao/index.js';
 
 const servers: { [sessionId: string]: Server } = {};
 
+// Per-session server instances for servers with perSession=true
+// Key format: `${sessionId}:${serverName}`
+const perSessionServerInfos: { [key: string]: ServerInfo } = {};
+
 const serverDao = getServerDao();
 
 // Helper function to set up keep-alive ping for SSE connections
@@ -79,6 +83,8 @@ export const getMcpServer = (sessionId?: string, group?: string): Server => {
 
 export const deleteMcpServer = (sessionId: string): void => {
   delete servers[sessionId];
+  // Clean up any per-session servers for this session
+  cleanupPerSessionServers(sessionId);
 };
 
 export const notifyToolChanged = async (name?: string) => {
@@ -221,6 +227,144 @@ const createTransportFromConfig = (name: string, conf: ServerConfig): any => {
   }
 
   return transport;
+};
+
+// Helper function to get or create per-session server instance
+export const getOrCreatePerSessionServer = async (
+  sessionId: string,
+  serverName: string,
+  serverConfig: ServerConfig,
+): Promise<ServerInfo> => {
+  const key = `${sessionId}:${serverName}`;
+  
+  // Return existing session server if it exists
+  if (perSessionServerInfos[key]) {
+    return perSessionServerInfos[key];
+  }
+
+  console.log(`Creating per-session server instance for session ${sessionId}, server ${serverName}`);
+
+  // Create new transport for this session
+  const transport = createTransportFromConfig(serverName, serverConfig);
+
+  const client = new Client(
+    {
+      name: `mcp-client-${serverName}-${sessionId}`,
+      version: '1.0.0',
+    },
+    {
+      capabilities: {
+        prompts: {},
+        resources: {},
+        tools: {},
+      },
+    },
+  );
+
+  // Get request options from server configuration, with fallbacks
+  const serverRequestOptions = serverConfig.options || {};
+  const requestOptions = {
+    timeout: serverRequestOptions.timeout || 60000,
+    resetTimeoutOnProgress: serverRequestOptions.resetTimeoutOnProgress || false,
+    maxTotalTimeout: serverRequestOptions.maxTotalTimeout,
+  };
+
+  // Create server info for this session
+  const serverInfo: ServerInfo = {
+    name: serverName,
+    owner: serverConfig.owner,
+    status: 'connecting',
+    error: null,
+    tools: [],
+    prompts: [],
+    client,
+    transport,
+    options: requestOptions,
+    createTime: Date.now(),
+    config: serverConfig,
+    sessionId: sessionId,
+  };
+  
+  perSessionServerInfos[key] = serverInfo;
+
+  // Connect asynchronously
+  client
+    .connect(transport, requestOptions)
+    .then(() => {
+      console.log(`Successfully connected per-session client for server: ${serverName}, session: ${sessionId}`);
+      const capabilities = client.getServerCapabilities();
+      
+      if (capabilities?.tools) {
+        client
+          .listTools({}, requestOptions)
+          .then((tools) => {
+            console.log(`Successfully listed ${tools.tools.length} tools for per-session server: ${serverName}, session: ${sessionId}`);
+            serverInfo.tools = tools.tools.map((tool) => ({
+              name: `${serverName}${getNameSeparator()}${tool.name}`,
+              description: tool.description || '',
+              inputSchema: cleanInputSchema(tool.inputSchema || {}),
+            }));
+          })
+          .catch((error) => {
+            console.error(`Failed to list tools for per-session server ${serverName}, session ${sessionId}:`, error);
+          });
+      }
+
+      if (capabilities?.prompts) {
+        client
+          .listPrompts({}, requestOptions)
+          .then((prompts) => {
+            console.log(`Successfully listed ${prompts.prompts.length} prompts for per-session server: ${serverName}, session: ${sessionId}`);
+            serverInfo.prompts = prompts.prompts.map((prompt) => ({
+              name: `${serverName}${getNameSeparator()}${prompt.name}`,
+              title: prompt.title,
+              description: prompt.description,
+              arguments: prompt.arguments,
+            }));
+          })
+          .catch((error) => {
+            console.error(`Failed to list prompts for per-session server ${serverName}, session ${sessionId}:`, error);
+          });
+      }
+
+      serverInfo.status = 'connected';
+      serverInfo.error = null;
+    })
+    .catch((error) => {
+      console.error(`Failed to connect per-session client for server ${serverName}, session ${sessionId}:`, error);
+      serverInfo.status = 'disconnected';
+      serverInfo.error = `Failed to connect: ${error.stack}`;
+    });
+
+  return serverInfo;
+};
+
+// Helper function to clean up per-session servers for a session
+export const cleanupPerSessionServers = (sessionId: string): void => {
+  const keysToDelete: string[] = [];
+  
+  for (const key in perSessionServerInfos) {
+    if (key.startsWith(`${sessionId}:`)) {
+      const serverInfo = perSessionServerInfos[key];
+      try {
+        if (serverInfo.client) {
+          serverInfo.client.close();
+        }
+        if (serverInfo.transport) {
+          serverInfo.transport.close();
+        }
+        if (serverInfo.keepAliveIntervalId) {
+          clearInterval(serverInfo.keepAliveIntervalId);
+        }
+      } catch (error) {
+        console.warn(`Error closing per-session server ${key}:`, error);
+      }
+      keysToDelete.push(key);
+    }
+  }
+  
+  keysToDelete.forEach(key => delete perSessionServerInfos[key]);
+  console.log(`Cleaned up ${keysToDelete.length} per-session servers for session ${sessionId}`);
 };
 
 // Helper function to handle client.callTool with reconnection logic
@@ -625,6 +769,45 @@ export const getServerByName = (name: string): ServerInfo | undefined => {
   return serverInfos.find((serverInfo) => serverInfo.name === name);
 };
 
+// Get server by name with session support (for per-session servers)
+const getServerByNameWithSession = async (name: string, sessionId?: string): Promise<ServerInfo | undefined> => {
+  // First check if this server is configured for per-session instances
+  const serverConfig = await serverDao.findById(name);
+  
+  if (serverConfig?.perSession && sessionId) {
+    // Try to get or create per-session server
+    const key = `${sessionId}:${name}`;
+    if (perSessionServerInfos[key]) {
+      return perSessionServerInfos[key];
+    }
+    // Create new per-session server instance
+    return await getOrCreatePerSessionServer(sessionId, name, serverConfig);
+  }
+  
+  // Fall back to shared server
+  return serverInfos.find((serverInfo) => serverInfo.name === name && !serverInfo.sessionId);
+};
+
+// Get server by tool name with session support (for per-session servers)
+const getServerByToolWithSession = async (toolName: string, sessionId?: string): Promise<ServerInfo | undefined> => {
+  // First try to find in per-session servers if sessionId is provided
+  if (sessionId) {
+    for (const key in perSessionServerInfos) {
+      if (key.startsWith(`${sessionId}:`)) {
+        const serverInfo = perSessionServerInfos[key];
+        if (serverInfo.tools.some((tool) => tool.name === toolName)) {
+          return serverInfo;
+        }
+      }
+    }
+  }
+  
+  // Fall back to shared servers
+  return serverInfos.find((serverInfo) => 
+    !serverInfo.sessionId && serverInfo.tools.some((tool) => tool.name === toolName)
+  );
+};
+
 // Filter tools by server configuration
 const filterToolsByConfig = async (serverName: string, tools: Tool[]): Promise<Tool[]> => {
   const serverConfig = await serverDao.findById(serverName);
@@ -640,8 +823,8 @@ const filterToolsByConfig = async (serverName: string, tools: Tool[]): Promise<T
   });
 };
 
-// Get server by tool name
-const getServerByTool = (toolName: string): ServerInfo | undefined => {
+// Get server by tool name (legacy - use getServerByToolWithSession instead)
+const _getServerByTool = (toolName: string): ServerInfo | undefined => {
   return serverInfos.find((serverInfo) => serverInfo.tools.some((tool) => tool.name === toolName));
 };
 
@@ -826,15 +1009,35 @@ Available servers: ${serversList}`;
     };
   }
 
-  const allServerInfos = getDataService()
+  // Get shared servers
+  let allServerInfos = getDataService()
     .filterData(serverInfos)
     .filter((serverInfo) => {
+      if (serverInfo.enabled === false) return false;
+      if (serverInfo.sessionId) return false; // Exclude per-session servers from shared list
+      if (!group) return true;
+      const serversInGroup = getServersInGroup(group);
+      if (!serversInGroup || serversInGroup.length === 0) return serverInfo.name === group;
+      return serversInGroup.includes(serverInfo.name);
+    });
+
+  // Add per-session servers for this session
+  if (sessionId) {
+    const sessionServers = Object.values(perSessionServerInfos).filter(
+      (serverInfo) => serverInfo.sessionId === sessionId && serverInfo.status === 'connected'
+    );
+    
+    // Filter session servers by group if applicable
+    const filteredSessionServers = sessionServers.filter((serverInfo) => {
       if (serverInfo.enabled === false) return false;
       if (!group) return true;
       const serversInGroup = getServersInGroup(group);
       if (!serversInGroup || serversInGroup.length === 0) return serverInfo.name === group;
       return serversInGroup.includes(serverInfo.name);
     });
+    
+    allServerInfos = [...allServerInfos, ...filteredSessionServers];
+  }
 
   const allTools = [];
   for (const serverInfo of allServerInfos) {
@@ -998,17 +1201,13 @@ export const handleCallToolRequest = async (request: any, extra: any) => {
       }
 
       const { arguments: toolArgs = {} } = request.params.arguments || {};
+      const sessionId = extra?.sessionId;
       let targetServerInfo: ServerInfo | undefined;
       if (extra && extra.server) {
-        targetServerInfo = getServerByName(extra.server);
+        targetServerInfo = await getServerByNameWithSession(extra.server, sessionId);
       } else {
-        // Find the first server that has this tool
-        targetServerInfo = serverInfos.find(
-          (serverInfo) =>
-            serverInfo.status === 'connected' &&
-            serverInfo.enabled !== false &&
-            serverInfo.tools.some((tool) => tool.name === toolName),
-        );
+        // Find the first server that has this tool (session-aware)
+        targetServerInfo = await getServerByToolWithSession(toolName, sessionId);
       }
 
       if (!targetServerInfo) {
@@ -1114,7 +1313,8 @@ export const handleCallToolRequest = async (request: any, extra: any) => {
     }
 
     // Regular tool handling
-    const serverInfo = getServerByTool(request.params.name);
+    const sessionId = extra?.sessionId;
+    const serverInfo = await getServerByToolWithSession(request.params.name, sessionId);
     if (!serverInfo) {
       throw new Error(`Server not found: ${request.params.name}`);
     }

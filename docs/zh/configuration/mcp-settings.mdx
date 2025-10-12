@@ -50,8 +50,9 @@ MCPHub 使用几个配置文件：
     },
     "playwright": {
       "command": "npx",
-      "args": ["@playwright/mcp@latest", "--headless"],
-      "timeout": 60000
+      "args": ["@playwright/mcp@latest", "--headless", "--isolated"],
+      "timeout": 60000,
+      "perSession": true
     },
     "slack": {
       "command": "npx",
@@ -111,14 +112,17 @@ MCPHub 使用几个配置文件：
 {
   "playwright": {
     "command": "npx",
-    "args": ["@playwright/mcp@latest", "--headless"],
+    "args": ["@playwright/mcp@latest", "--headless", "--isolated"],
     "timeout": 60000,
+    "perSession": true,
     "env": {
       "PLAYWRIGHT_BROWSERS_PATH": "/tmp/browsers"
     }
   }
 }
 ```
+
+**注意**: `--isolated` 标志确保每个浏览器会话是隔离的，而 `perSession: true` 为每个用户会话创建单独的服务器实例，防止并发用户之间的状态泄漏。
 
 ### 文件和系统服务器
 

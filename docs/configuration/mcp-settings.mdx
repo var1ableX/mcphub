@@ -47,7 +47,8 @@ MCPHub uses several configuration files:
     },
     "playwright": {
       "command": "npx",
-      "args": ["@playwright/mcp@latest", "--headless"]
+      "args": ["@playwright/mcp@latest", "--headless", "--isolated"],
+      "perSession": true
     },
     "slack": {
       "command": "npx",
@@ -101,14 +102,17 @@ MCPHub uses several configuration files:
 {
   "playwright": {
     "command": "npx",
-    "args": ["@playwright/mcp@latest", "--headless"],
+    "args": ["@playwright/mcp@latest", "--headless", "--isolated"],
     "timeout": 60000,
+    "perSession": true,
     "env": {
       "PLAYWRIGHT_BROWSERS_PATH": "/tmp/browsers"
     }
   }
 }
 ```
+
+**Note**: The `--isolated` flag ensures each browser session is isolated, and `perSession: true` creates a separate server instance for each user session, preventing state leakage between concurrent users.
 
 ### File and System Servers
 
