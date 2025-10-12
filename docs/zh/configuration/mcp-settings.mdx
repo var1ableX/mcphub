@@ -80,12 +80,47 @@ MCPHub 使用几个配置文件：
 | 字段           | 类型    | 默认值          | 描述               |
 | -------------- | ------- | --------------- | ------------------ |
 | `env`          | object  | `{}`            | 环境变量           |
+| `perSession`   | boolean | `false`         | 为每个用户会话创建独立的服务器实例（用于有状态的服务器，如 playwright） |
+| `enabled`      | boolean | `true`          | 启用/禁用服务器    |
+| `timeout`      | number  | `60000`         | 请求超时（毫秒）   |
+| `keepAliveInterval` | number | `60000`    | SSE 服务器的保活 ping 间隔（毫秒） |
 | `cwd`          | string  | `process.cwd()` | 工作目录           |
-| `timeout`      | number  | `30000`         | 启动超时（毫秒）   |
 | `restart`      | boolean | `true`          | 失败时自动重启     |
 | `maxRestarts`  | number  | `5`             | 最大重启次数       |
 | `restartDelay` | number  | `5000`          | 重启间延迟（毫秒） |
 | `stdio`        | string  | `pipe`          | stdio 配置         |
+
+## 会话隔离的服务器实例
+
+某些 MCP 服务器会维护应该在不同用户之间隔离的状态。例如，Playwright 服务器维护可能在并发用户之间泄漏表单数据或其他状态的浏览器会话。
+
+为了防止这种情况，您可以在服务器配置中设置 `perSession: true`。这将为每个用户会话创建一个单独的服务器实例，而不是在所有用户之间共享单个实例。
+
+### 何时使用会话隔离的服务器
+
+对于以下服务器使用 `perSession: true`：
+- 维护浏览器状态（如 Playwright）
+- 在内存中存储用户特定数据
+- 具有不应共享的文件句柄或数据库连接
+- 当多个用户同时访问时可能导致竞争条件
+
+### 示例配置
+
+```json
+{
+  "playwright": {
+    "command": "npx",
+    "args": ["@playwright/mcp@latest", "--headless", "--isolated"],
+    "perSession": true
+  }
+}
+```
+
+**重要提示：**
+- 每个会话隔离的服务器实例都会消耗额外的资源（内存、CPU）
+- 会话隔离的服务器在用户会话结束时会自动清理
+- 对于 Playwright，还要使用 `--isolated` 标志以确保浏览器上下文被隔离
+- 不建议用于可以安全共享的无状态服务器
 
 ## 常见 MCP 服务器示例
 

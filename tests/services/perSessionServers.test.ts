@@ -1,7 +1,6 @@
 import {
   getOrCreatePerSessionServer,
   cleanupPerSessionServers,
-  handleCallToolRequest,
 } from '../../src/services/mcpService';
 import { ServerConfig } from '../../src/types';
 

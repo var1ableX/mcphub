@@ -76,6 +76,42 @@ MCPHub uses several configuration files:
 | Field          | Type    | Default         | Description                 |
 | -------------- | ------- | --------------- | --------------------------- |
 | `env`          | object  | `{}`            | Environment variables       |
+| `perSession`   | boolean | `false`         | Create separate server instance per user session (for stateful servers like playwright) |
+| `enabled`      | boolean | `true`          | Enable/disable the server   |
+| `timeout`      | number  | `60000`         | Request timeout in milliseconds |
+| `keepAliveInterval` | number | `60000`    | Keep-alive ping interval for SSE servers (ms) |
+
+## Per-Session Server Instances
+
+Some MCP servers maintain state that should be isolated between different users. For example, the Playwright server maintains browser sessions that could leak form data or other state between concurrent users.
+
+To prevent this, you can set `perSession: true` in the server configuration. This creates a separate server instance for each user session instead of sharing a single instance across all users.
+
+### When to Use Per-Session Servers
+
+Use `perSession: true` for servers that:
+- Maintain browser state (like Playwright)
+- Store user-specific data in memory
+- Have file handles or database connections that shouldn't be shared
+- Could cause race conditions when multiple users access simultaneously
+
+### Example Configuration
+
+```json
+{
+  "playwright": {
+    "command": "npx",
+    "args": ["@playwright/mcp@latest", "--headless", "--isolated"],
+    "perSession": true
+  }
+}
+```
+
+**Important Notes:**
+- Each per-session server instance consumes additional resources (memory, CPU)
+- Per-session servers are automatically cleaned up when the user session ends
+- For Playwright, also use the `--isolated` flag to ensure browser contexts are isolated
+- Not recommended for stateless servers that can safely be shared
 
 ## Common MCP Server Examples
 
