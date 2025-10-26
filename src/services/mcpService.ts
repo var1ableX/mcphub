@@ -26,6 +26,7 @@ import { getDataService } from './services.js';
 import { getServerDao, ServerConfigWithName } from '../dao/index.js';
 import { initializeAllOAuthClients } from './oauthService.js';
 import { createOAuthProvider } from './mcpOAuthProvider.js';
+import { clearClusterSessionBindings } from './clusterService.js';
 
 const servers: { [sessionId: string]: Server } = {};
 
@@ -161,6 +162,8 @@ export const cleanupAllServers = (): void => {
   Object.keys(servers).forEach((sessionId) => {
     delete servers[sessionId];
   });
+
+  clearClusterSessionBindings();
 };
 
 // Helper function to create transport based on server configuration

@@ -9,6 +9,7 @@ import { loadSettings } from '../config/index.js';
 import config from '../config/index.js';
 import { UserContextService } from './userContextService.js';
 import { RequestContextService } from './requestContextService.js';
+import { tryProxyMcpRequest, tryProxySseConnection, tryProxySseMessage } from './clusterService.js';
 
 const transports: { [sessionId: string]: { transport: Transport; group: string } } = {};
 
@@ -81,6 +82,10 @@ export const handleSseConnection = async (req: Request, res: Response): Promise<
 
   console.log(`Creating SSE transport with messages path: ${messagesPath}`);
 
+  if (await tryProxySseConnection(req, res, group)) {
+    return;
+  }
+
   const transport = new SSEServerTransport(messagesPath, res);
   transports[transport.sessionId] = { transport, group: group };
 
@@ -114,6 +119,10 @@ export const handleSseMessage = async (req: Request, res: Response): Promise<voi
   if (!sessionId) {
     console.error('Missing sessionId in query parameters');
     res.status(400).send('Missing sessionId parameter');
+    return;
+  }
+
+  if (await tryProxySseMessage(req, res)) {
     return;
   }
 
@@ -171,6 +180,10 @@ export const handleMcpPostRequest = async (req: Request, res: Response): Promise
   };
   if (!group && !routingConfig.enableGlobalRoute) {
     res.status(403).send('Global routes are disabled. Please specify a group ID.');
+    return;
+  }
+
+  if (await tryProxyMcpRequest(req, res, group)) {
     return;
   }
 
@@ -236,6 +249,11 @@ export const handleMcpOtherRequest = async (req: Request, res: Response) => {
   // Check bearer auth using filtered settings
   if (!validateBearerAuth(req)) {
     res.status(401).send('Bearer authentication required or invalid token');
+    return;
+  }
+
+  const group = req.params.group;
+  if (await tryProxyMcpRequest(req, res, group)) {
     return;
   }
 

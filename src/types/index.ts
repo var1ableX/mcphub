@@ -62,6 +62,20 @@ export interface MarketServerTool {
   inputSchema: Record<string, any>;
 }
 
+export interface ClusterNodeConfig {
+  id: string; // Unique identifier for the node
+  url: string; // Base URL for the node (e.g. http://node-a:3000)
+  groups?: string[]; // Optional list of group identifiers served by this node; include empty string for global routes
+  weight?: number; // Optional weight for load balancing
+  forwardHeaders?: Record<string, string>; // Additional headers forwarded to the node on every request
+  pathPrefix?: string; // Optional prefix prepended before forwarding paths (defaults to hub base path)
+}
+
+export interface ClusterConfig {
+  enabled?: boolean; // Flag to enable/disable cluster routing
+  nodes?: ClusterNodeConfig[]; // Cluster node definitions
+}
+
 export interface MarketServer {
   name: string;
   display_name: string;
@@ -171,6 +185,7 @@ export interface SystemConfig {
   };
   nameSeparator?: string; // Separator used between server name and tool/prompt name (default: '-')
   oauth?: OAuthProviderConfig; // OAuth provider configuration for upstream MCP servers
+  cluster?: ClusterConfig; // Cluster configuration for multi-node deployments
 }
 
 export interface UserConfig {
