@@ -15,9 +15,11 @@ import {
 } from './services/sseService.js';
 import { initializeDefaultUser } from './models/User.js';
 import { sseUserContextMiddleware } from './middlewares/userContext.js';
+import { clusterSseRouting, clusterMcpRouting } from './middlewares/clusterRouting.js';
 import { findPackageRoot } from './utils/path.js';
 import { getCurrentModuleDir } from './utils/moduleDir.js';
 import { initOAuthProvider, getOAuthRouter } from './services/oauthService.js';
+import { initClusterService, shutdownClusterService } from './services/clusterService.js';
 
 /**
  * Get the directory of the current module
@@ -73,53 +75,74 @@ export class AppServer {
       initRoutes(this.app);
       console.log('Server initialized successfully');
 
+      // Initialize cluster service
+      await initClusterService();
+
       initUpstreamServers()
         .then(() => {
           console.log('MCP server initialized successfully');
 
-          // Original routes (global and group-based)
-          this.app.get(`${this.basePath}/sse/:group(.*)?`, sseUserContextMiddleware, (req, res) =>
-            handleSseConnection(req, res),
+          // Original routes (global and group-based) with cluster routing
+          this.app.get(
+            `${this.basePath}/sse/:group(.*)?`,
+            sseUserContextMiddleware,
+            clusterSseRouting,
+            (req, res) => handleSseConnection(req, res),
           );
-          this.app.post(`${this.basePath}/messages`, sseUserContextMiddleware, handleSseMessage);
+          this.app.post(
+            `${this.basePath}/messages`,
+            sseUserContextMiddleware,
+            clusterSseRouting,
+            handleSseMessage,
+          );
           this.app.post(
             `${this.basePath}/mcp/:group(.*)?`,
             sseUserContextMiddleware,
+            clusterMcpRouting,
             handleMcpPostRequest,
           );
           this.app.get(
             `${this.basePath}/mcp/:group(.*)?`,
             sseUserContextMiddleware,
+            clusterMcpRouting,
             handleMcpOtherRequest,
           );
           this.app.delete(
             `${this.basePath}/mcp/:group(.*)?`,
             sseUserContextMiddleware,
+            clusterMcpRouting,
             handleMcpOtherRequest,
           );
 
-          // User-scoped routes with user context middleware
-          this.app.get(`${this.basePath}/:user/sse/:group(.*)?`, sseUserContextMiddleware, (req, res) =>
-            handleSseConnection(req, res),
+          // User-scoped routes with user context middleware and cluster routing
+          this.app.get(
+            `${this.basePath}/:user/sse/:group(.*)?`,
+            sseUserContextMiddleware,
+            clusterSseRouting,
+            (req, res) => handleSseConnection(req, res),
           );
           this.app.post(
             `${this.basePath}/:user/messages`,
             sseUserContextMiddleware,
+            clusterSseRouting,
             handleSseMessage,
           );
           this.app.post(
             `${this.basePath}/:user/mcp/:group(.*)?`,
             sseUserContextMiddleware,
+            clusterMcpRouting,
             handleMcpPostRequest,
           );
           this.app.get(
             `${this.basePath}/:user/mcp/:group(.*)?`,
             sseUserContextMiddleware,
+            clusterMcpRouting,
             handleMcpOtherRequest,
           );
           this.app.delete(
             `${this.basePath}/:user/mcp/:group(.*)?`,
             sseUserContextMiddleware,
+            clusterMcpRouting,
             handleMcpOtherRequest,
           );
         })
@@ -189,6 +212,11 @@ export class AppServer {
 
   getApp(): express.Application {
     return this.app;
+  }
+
+  shutdown(): void {
+    console.log('Shutting down cluster service...');
+    shutdownClusterService();
   }
 
   // Helper method to find frontend dist path in different environments

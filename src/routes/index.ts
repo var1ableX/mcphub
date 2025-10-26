@@ -80,6 +80,14 @@ import {
   getGroupOpenAPISpec,
 } from '../controllers/openApiController.js';
 import { handleOAuthCallback } from '../controllers/oauthCallbackController.js';
+import {
+  getClusterStatus,
+  registerNodeEndpoint,
+  updateHeartbeat,
+  getNodes,
+  getReplicasForServer,
+  getSessionAffinityInfo,
+} from '../controllers/clusterController.js';
 import { auth } from '../middlewares/auth.js';
 
 const router = express.Router();
@@ -166,6 +174,14 @@ export const initRoutes = (app: express.Application): void => {
   router.get('/logs', getAllLogs);
   router.delete('/logs', clearLogs);
   router.get('/logs/stream', streamLogs);
+
+  // Cluster management routes
+  router.get('/cluster/status', getClusterStatus);
+  router.post('/cluster/register', registerNodeEndpoint);
+  router.post('/cluster/heartbeat', updateHeartbeat);
+  router.get('/cluster/nodes', getNodes);
+  router.get('/cluster/servers/:serverId/replicas', getReplicasForServer);
+  router.get('/cluster/sessions/:sessionId', getSessionAffinityInfo);
 
   // MCP settings export route
   router.get('/mcp-settings/export', getMcpSettingsJson);

@@ -171,6 +171,7 @@ export interface SystemConfig {
   };
   nameSeparator?: string; // Separator used between server name and tool/prompt name (default: '-')
   oauth?: OAuthProviderConfig; // OAuth provider configuration for upstream MCP servers
+  cluster?: ClusterConfig; // Cluster configuration for distributed deployment
 }
 
 export interface UserConfig {
@@ -355,4 +356,64 @@ export interface ApiResponse<T = unknown> {
 export interface AddServerRequest {
   name: string; // Name of the server to add
   config: ServerConfig; // Configuration details for the server
+}
+
+// Cluster-related types
+
+// Cluster node information
+export interface ClusterNode {
+  id: string; // Unique identifier for the node (e.g., UUID)
+  name: string; // Human-readable name of the node
+  host: string; // Hostname or IP address
+  port: number; // Port number the node is running on
+  url: string; // Full URL to access the node (e.g., 'http://node1:3000')
+  status: 'active' | 'inactive' | 'unhealthy'; // Current status of the node
+  lastHeartbeat: number; // Timestamp of last heartbeat
+  servers: string[]; // List of MCP server names hosted on this node
+  metadata?: Record<string, any>; // Additional metadata about the node
+}
+
+// Cluster configuration
+export interface ClusterConfig {
+  enabled: boolean; // Whether cluster mode is enabled
+  mode: 'standalone' | 'node' | 'coordinator'; // Cluster operating mode
+  node?: {
+    // Configuration when running as a cluster node
+    id?: string; // Node ID (generated if not provided)
+    name?: string; // Node name (defaults to hostname)
+    coordinatorUrl: string; // URL of the coordinator node
+    heartbeatInterval?: number; // Heartbeat interval in milliseconds (default: 5000)
+    registerOnStartup?: boolean; // Whether to register with coordinator on startup (default: true)
+  };
+  coordinator?: {
+    // Configuration when running as coordinator
+    nodeTimeout?: number; // Time in ms before marking a node as unhealthy (default: 15000)
+    cleanupInterval?: number; // Interval for cleaning up inactive nodes (default: 30000)
+    stickySessionTimeout?: number; // Sticky session timeout in milliseconds (default: 3600000, 1 hour)
+  };
+  stickySession?: {
+    enabled: boolean; // Whether sticky sessions are enabled (default: true for cluster mode)
+    strategy: 'consistent-hash' | 'cookie' | 'header'; // Strategy for session affinity (default: consistent-hash)
+    cookieName?: string; // Cookie name for cookie-based sticky sessions (default: 'MCPHUB_NODE')
+    headerName?: string; // Header name for header-based sticky sessions (default: 'X-MCPHub-Node')
+  };
+}
+
+// Cluster server replica configuration
+export interface ServerReplica {
+  serverId: string; // MCP server identifier
+  nodeId: string; // Node hosting this replica
+  nodeUrl: string; // URL to access this replica
+  status: 'active' | 'inactive'; // Status of this replica
+  weight?: number; // Load balancing weight (default: 1)
+}
+
+// Session affinity information
+export interface SessionAffinity {
+  sessionId: string; // Session identifier
+  nodeId: string; // Node ID for this session
+  serverId?: string; // Optional: specific server this session is bound to
+  createdAt: number; // Timestamp when session was created
+  lastAccessed: number; // Timestamp of last access
+  expiresAt: number; // Timestamp when session expires
 }
