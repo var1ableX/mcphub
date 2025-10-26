@@ -5,7 +5,6 @@
 import {
   isClusterEnabled,
   getClusterMode,
-  getCurrentNodeId,
   registerNode,
   updateNodeHeartbeat,
   getActiveNodes,
@@ -18,15 +17,16 @@ import {
   shutdownClusterService,
 } from '../../src/services/clusterService';
 import { ClusterNode } from '../../src/types/index';
+import * as configModule from '../../src/config/index.js';
 
 // Mock the config module
 jest.mock('../../src/config/index.js', () => ({
   loadSettings: jest.fn(),
 }));
 
-const { loadSettings } = require('../../src/config/index.js');
-
 describe('Cluster Service', () => {
+  const loadSettings = configModule.loadSettings as jest.MockedFunction<typeof configModule.loadSettings>;
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
