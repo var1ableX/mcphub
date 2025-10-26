@@ -21,6 +21,7 @@ MCPHub makes it easy to manage and scale multiple MCP (Model Context Protocol) s
 - **Secure Authentication**: Built-in user management with role-based access powered by JWT and bcrypt.
 - **OAuth 2.0 Support**: Full OAuth support for upstream MCP servers with proxy authorization capabilities.
 - **Environment Variable Expansion**: Use environment variables anywhere in your configuration for secure credential management. See [Environment Variables Guide](docs/environment-variables.md).
+- **Cluster Deployment**: Deploy multiple nodes for high availability and load distribution with sticky session support. See [Cluster Deployment Guide](docs/cluster-deployment.md).
 - **Docker-Ready**: Deploy instantly with our containerized setup.
 
 ## 🔧 Quick Start
