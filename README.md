@@ -20,6 +20,7 @@ MCPHub makes it easy to manage and scale multiple MCP (Model Context Protocol) s
 - **Group-Based Access Control**: Organize servers into customizable groups for streamlined permissions management.
 - **Secure Authentication**: Built-in user management with role-based access powered by JWT and bcrypt.
 - **OAuth 2.0 Support**: Full OAuth support for upstream MCP servers with proxy authorization capabilities.
+- **Cluster Mode**: Scale to multiple MCPHub nodes with coordinator-backed sticky sessions. See [Cluster Guide](docs/cluster-guide.md).
 - **Environment Variable Expansion**: Use environment variables anywhere in your configuration for secure credential management. See [Environment Variables Guide](docs/environment-variables.md).
 - **Docker-Ready**: Deploy instantly with our containerized setup.
 
@@ -58,6 +59,8 @@ Create a `mcp_settings.json` file to customize your server settings:
   }
 }
 ```
+
+To enable a multi-node deployment, add a `systemConfig.cluster` block. Refer to the [Cluster Guide](docs/cluster-guide.md) for the full specification and sample topologies.
 
 #### OAuth Configuration (Optional)
 

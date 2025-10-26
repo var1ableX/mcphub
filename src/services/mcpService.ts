@@ -26,6 +26,7 @@ import { getDataService } from './services.js';
 import { getServerDao, ServerConfigWithName } from '../dao/index.js';
 import { initializeAllOAuthClients } from './oauthService.js';
 import { createOAuthProvider } from './mcpOAuthProvider.js';
+import { clusterService, ClusterServerSnapshot } from './clusterService.js';
 
 const servers: { [sessionId: string]: Server } = {};
 
@@ -645,18 +646,41 @@ export const initializeClientsFromSettings = async (
 
 // Register all MCP tools
 export const registerAllTools = async (isInit: boolean, serverName?: string): Promise<void> => {
+  await clusterService.initialize();
   await initializeClientsFromSettings(isInit, serverName);
+
+  if (clusterService.isEnabled()) {
+    const snapshots: ClusterServerSnapshot[] = serverInfos.map((server) => ({
+      name: server.name,
+      status: server.status,
+      metadata: {
+        owner: server.owner,
+        enabled: server.enabled !== false,
+        type: server.config?.type,
+        createTime: server.createTime,
+        error: server.error,
+      },
+    }));
+
+    try {
+      await clusterService.registerLocalServers(snapshots);
+    } catch (error) {
+      console.error('Failed to publish cluster server inventory:', error);
+    }
+  }
 };
 
 // Get all server information
 export const getServersInfo = async (): Promise<Omit<ServerInfo, 'client' | 'transport'>[]> => {
+  await clusterService.initialize();
+
   const allServers: ServerConfigWithName[] = await serverDao.findAll();
   const dataService = getDataService();
   const filterServerInfos: ServerInfo[] = dataService.filterData
     ? dataService.filterData(serverInfos)
     : serverInfos;
   const infos = filterServerInfos.map(
-    ({ name, status, tools, prompts, createTime, error, oauth }) => {
+    ({ name, owner, status, tools, prompts, createTime, error, oauth }) => {
       const serverConfig = allServers.find((server) => server.name === name);
       const enabled = serverConfig ? serverConfig.enabled !== false : true;
 
@@ -681,6 +705,7 @@ export const getServersInfo = async (): Promise<Omit<ServerInfo, 'client' | 'tra
 
       return {
         name,
+        owner,
         status,
         error,
         tools: toolsWithEnabled,
@@ -701,6 +726,76 @@ export const getServersInfo = async (): Promise<Omit<ServerInfo, 'client' | 'tra
     if (a.enabled === b.enabled) return 0;
     return a.enabled ? -1 : 1;
   });
+
+  if (clusterService.isEnabled()) {
+    try {
+      const placements = new Map<
+        string,
+        {
+          nodes: { nodeId: string; status: ServerInfo['status']; snapshot: ClusterServerSnapshot }[];
+        }
+      >();
+
+      const activeNodes = await clusterService.getActiveNodes();
+      for (const node of activeNodes) {
+        for (const snapshot of node.servers) {
+          if (!placements.has(snapshot.name)) {
+            placements.set(snapshot.name, { nodes: [] });
+          }
+          placements.get(snapshot.name)!.nodes.push({
+            nodeId: node.nodeId,
+            status: snapshot.status as ServerInfo['status'],
+            snapshot,
+          });
+        }
+      }
+
+      const infoByName = new Map(infos.map((info) => [info.name, info]));
+      for (const [name, placement] of placements.entries()) {
+        const clusterMeta = {
+          replicas: placement.nodes.length,
+          nodes: placement.nodes.map((item) => ({
+            nodeId: item.nodeId,
+            status: item.status,
+          })),
+        };
+
+        const existing = infoByName.get(name);
+        if (existing) {
+          (existing as any).cluster = clusterMeta;
+          continue;
+        }
+
+        const snapshot = placement.nodes[0]?.snapshot;
+        const metadata = (snapshot?.metadata as Record<string, unknown> | undefined) || {};
+        const snapshotEnabled = metadata.enabled;
+        const snapshotError = metadata.error;
+        const snapshotCreateTime = metadata.createTime;
+
+        infos.push({
+          name,
+          owner: (snapshot?.metadata?.owner as string | undefined) || undefined,
+          status: (snapshot?.status as ServerInfo['status']) || 'disconnected',
+          error: (snapshotError as string | null) || null,
+          tools: [],
+          prompts: [],
+          createTime: (snapshotCreateTime as number) || Date.now(),
+          enabled: typeof snapshotEnabled === 'boolean' ? (snapshotEnabled as boolean) : true,
+          oauth: undefined,
+        });
+        const remoteInfo = infos[infos.length - 1];
+        (remoteInfo as any).cluster = clusterMeta;
+      }
+
+      infos.sort((a, b) => {
+        if (a.enabled === b.enabled) return 0;
+        return a.enabled ? -1 : 1;
+      });
+    } catch (error) {
+      console.error('Failed to build cluster-aware server info:', error);
+    }
+  }
+
   return infos;
 };
 

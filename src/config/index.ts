@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import fs from 'fs';
-import { McpSettings, IUser } from '../types/index.js';
+import { McpSettings, IUser, ClusterConfig } from '../types/index.js';
 import { getConfigFilePath } from '../utils/path.js';
 import { getPackageVersion } from '../utils/version.js';
 import { getDataService } from '../services/services.js';
@@ -91,6 +91,11 @@ export const getSettingsCacheInfo = (): { hasCache: boolean } => {
   return {
     hasCache: settingsCache !== null,
   };
+};
+
+export const getClusterConfig = (): ClusterConfig | undefined => {
+  const settings = loadOriginalSettings();
+  return settings.systemConfig?.cluster;
 };
 
 export function replaceEnvVars(input: Record<string, any>): Record<string, any>;

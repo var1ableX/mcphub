@@ -18,6 +18,7 @@ import { sseUserContextMiddleware } from './middlewares/userContext.js';
 import { findPackageRoot } from './utils/path.js';
 import { getCurrentModuleDir } from './utils/moduleDir.js';
 import { initOAuthProvider, getOAuthRouter } from './services/oauthService.js';
+import { clusterService } from './services/clusterService.js';
 
 /**
  * Get the directory of the current module
@@ -58,6 +59,13 @@ export class AppServer {
 
       // Initialize default admin user if no users exist
       await initializeDefaultUser();
+
+      await clusterService.initialize();
+      if (clusterService.isEnabled()) {
+        console.log(
+          `Cluster mode enabled for node: ${clusterService.getLocalNodeId() || 'unknown'}`,
+        );
+      }
 
       // Initialize OAuth provider if configured
       initOAuthProvider();

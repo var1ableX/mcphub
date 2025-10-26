@@ -149,6 +149,37 @@ export interface OAuthProviderConfig {
   }>;
 }
 
+export interface ClusterNodeConfig {
+  nodeId: string; // Unique identifier for a node
+  baseUrl: string; // Base URL reachable by other mcphub nodes (e.g. http://node-1:3000)
+  publicUrl?: string; // Optional external URL for diagnostics or redirects
+  capacity?: number; // Optional relative capacity weight for scheduling
+  tags?: string[]; // Optional metadata tags used for routing policies
+}
+
+export interface ClusterCoordinatorConfig {
+  type?: 'memory' | 'redis'; // Coordinator backend type
+  redisUrl?: string; // Redis connection string when type === 'redis'
+  keyPrefix?: string; // Optional key prefix to isolate environments
+  heartbeatIntervalMs?: number; // Interval for node heartbeat updates
+  offlineAfterMs?: number; // Duration after which node is considered unavailable
+}
+
+export interface ClusterSessionConfig {
+  stickyKey?: 'sessionId' | 'user' | 'group'; // Determines affinity key
+  ttlSeconds?: number; // Optional TTL for inactive session mappings
+}
+
+export interface ClusterConfig {
+  enabled?: boolean; // Enable/disable cluster mode
+  nodeId: string; // Local node identifier
+  baseUrl: string; // Local node base URL used for intra-cluster proxying
+  nodes?: ClusterNodeConfig[]; // Optional static cluster membership list
+  coordinator?: ClusterCoordinatorConfig; // Coordinator backend configuration
+  session?: ClusterSessionConfig; // Session affinity configuration
+  announceServers?: boolean; // Whether to publish local server availability to the cluster
+}
+
 export interface SystemConfig {
   routing?: {
     enableGlobalRoute?: boolean; // Controls whether the /sse endpoint without group is enabled
@@ -171,6 +202,7 @@ export interface SystemConfig {
   };
   nameSeparator?: string; // Separator used between server name and tool/prompt name (default: '-')
   oauth?: OAuthProviderConfig; // OAuth provider configuration for upstream MCP servers
+  cluster?: ClusterConfig; // Cluster configuration for multi-node deployments
 }
 
 export interface UserConfig {
