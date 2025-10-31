@@ -207,6 +207,55 @@ MCPHub uses several configuration files:
 }
 ```
 
+### Productivity and Project Management
+
+#### Atlassian (Jira & Confluence) Server
+
+```json
+{
+  "atlassian": {
+    "command": "uvx",
+    "args": [
+      "mcp-atlassian",
+      "--jira-url=${JIRA_URL}",
+      "--jira-username=${JIRA_USERNAME}",
+      "--jira-token=${JIRA_TOKEN}",
+      "--confluence-url=${CONFLUENCE_URL}",
+      "--confluence-username=${CONFLUENCE_USERNAME}",
+      "--confluence-token=${CONFLUENCE_TOKEN}"
+    ],
+    "env": {}
+  }
+}
+```
+
+**Jira Cloud Only Configuration:**
+
+```json
+{
+  "jira": {
+    "command": "uvx",
+    "args": [
+      "mcp-atlassian",
+      "--jira-url=${JIRA_URL}",
+      "--jira-username=${JIRA_USERNAME}",
+      "--jira-token=${JIRA_TOKEN}"
+    ],
+    "env": {}
+  }
+}
+```
+
+**Required Environment Variables:**
+- `JIRA_URL`: Your Jira Cloud URL (e.g., `https://your-company.atlassian.net`)
+- `JIRA_USERNAME`: Your Atlassian account email
+- `JIRA_TOKEN`: API token from [Atlassian API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+- `CONFLUENCE_URL`: Your Confluence URL (e.g., `https://your-company.atlassian.net/wiki`)
+- `CONFLUENCE_USERNAME`: Your Confluence account email (often same as Jira)
+- `CONFLUENCE_TOKEN`: Confluence API token (can be same as Jira token for Cloud)
+
+**Setup Guide:** See [examples/README_ATLASSIAN_JIRA.md](../../examples/README_ATLASSIAN_JIRA.md) for detailed setup instructions.
+
 ### Map and Location Services
 
 #### Amap (高德地图) Server

@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "atlassian": {
+      "command": "uvx",
+      "args": [
+        "mcp-atlassian",
+        "--jira-url=${JIRA_URL}",
+        "--jira-username=${JIRA_USERNAME}",
+        "--jira-token=${JIRA_TOKEN}"
+      ],
+      "env": {}
+    }
+  },
+  "users": [
+    {
+      "username": "admin",
+      "password": "$2b$10$Vt7krIvjNgyN67LXqly0uOcTpN0LI55cYRbcKC71pUDAP0nJ7RPa.",
+      "isAdmin": true
+    }
+  ]
+}
