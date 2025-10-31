@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import SwaggerParser from '@apidevtools/swagger-parser';
 import { OpenAPIV3 } from 'openapi-types';
 import { ServerConfig, OpenAPISecurityConfig } from '../types/index.js';
+import { createSafeJSON } from '../utils/serialization.js';
 
 export interface OpenAPIToolInfo {
   name: string;
@@ -299,6 +300,31 @@ export class OpenAPIClient {
     return schema;
   }
 
+  /**
+   * Expands parameters that may have been stringified due to circular reference handling
+   * This reverses the '[Circular Reference]' placeholder back to proper values when possible
+   */
+  private expandParameter(value: unknown): unknown {
+    if (typeof value === 'string' && value === '[Circular Reference]') {
+      // Return undefined for circular references to avoid sending invalid data
+      return undefined;
+    }
+    if (typeof value === 'object' && value !== null) {
+      if (Array.isArray(value)) {
+        return value.map((item) => this.expandParameter(item));
+      }
+      const result: Record<string, unknown> = {};
+      for (const [key, val] of Object.entries(value)) {
+        const expanded = this.expandParameter(val);
+        if (expanded !== undefined) {
+          result[key] = expanded;
+        }
+      }
+      return result;
+    }
+    return value;
+  }
+
   async callTool(
     toolName: string,
     args: Record<string, unknown>,
@@ -310,12 +336,15 @@ export class OpenAPIClient {
     }
 
     try {
+      // Expand any circular reference placeholders in arguments
+      const expandedArgs = this.expandParameter(args) as Record<string, unknown>;
+
       // Build the request URL with path parameters
       let url = tool.path;
       const pathParams = tool.parameters?.filter((p) => p.in === 'path') || [];
 
       for (const param of pathParams) {
-        const value = args[param.name];
+        const value = expandedArgs[param.name];
         if (value !== undefined) {
           url = url.replace(`{${param.name}}`, String(value));
         }
@@ -326,7 +355,7 @@ export class OpenAPIClient {
       const queryParamDefs = tool.parameters?.filter((p) => p.in === 'query') || [];
 
       for (const param of queryParamDefs) {
-        const value = args[param.name];
+        const value = expandedArgs[param.name];
         if (value !== undefined) {
           queryParams[param.name] = value;
         }
@@ -340,8 +369,8 @@ export class OpenAPIClient {
       };
 
       // Add request body if applicable
-      if (args.body && ['post', 'put', 'patch'].includes(tool.method)) {
-        requestConfig.data = args.body;
+      if (expandedArgs.body && ['post', 'put', 'patch'].includes(tool.method)) {
+        requestConfig.data = expandedArgs.body;
       }
 
       // Collect all headers to be sent
@@ -350,7 +379,7 @@ export class OpenAPIClient {
       // Add headers if any header parameters are defined
       const headerParams = tool.parameters?.filter((p) => p.in === 'header') || [];
       for (const param of headerParams) {
-        const value = args[param.name];
+        const value = expandedArgs[param.name];
         if (value !== undefined) {
           allHeaders[param.name] = String(value);
         }
@@ -383,7 +412,8 @@ export class OpenAPIClient {
   }
 
   getTools(): OpenAPIToolInfo[] {
-    return this.tools;
+    // Return a safe copy to avoid circular reference issues
+    return createSafeJSON(this.tools);
   }
 
   getSpec(): OpenAPIV3.Document | null {
