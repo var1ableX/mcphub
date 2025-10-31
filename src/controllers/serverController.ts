@@ -10,7 +10,7 @@ import {
   toggleServerStatus,
 } from '../services/mcpService.js';
 import { loadSettings, saveSettings } from '../config/index.js';
-import { syncAllServerToolsEmbeddings } from '../services/vectorSearchService.js';
+import { syncAllServerToolsEmbeddings, searchToolsByVector } from '../services/vectorSearchService.js';
 import { createSafeJSON } from '../utils/serialization.js';
 
 export const getAllServers = async (_: Request, res: Response): Promise<void> => {
@@ -876,6 +876,77 @@ export const updatePromptDescription = async (req: Request, res: Response): Prom
     res.status(500).json({
       success: false,
       message: 'Internal server error',
+    });
+  }
+};
+
+/**
+ * Search servers by semantic query using vector embeddings
+ * This searches through server tools and returns servers that match the query
+ */
+export const searchServers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { query, limit = 10, threshold = 0.65 } = req.query;
+
+    if (!query || typeof query !== 'string') {
+      res.status(400).json({
+        success: false,
+        message: 'Search query is required',
+      });
+      return;
+    }
+
+    // Parse limit and threshold
+    const limitNum = typeof limit === 'string' ? parseInt(limit, 10) : Number(limit);
+    const thresholdNum = typeof threshold === 'string' ? parseFloat(threshold) : Number(threshold);
+
+    // Validate limit and threshold
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+      res.status(400).json({
+        success: false,
+        message: 'Limit must be between 1 and 100',
+      });
+      return;
+    }
+
+    if (isNaN(thresholdNum) || thresholdNum < 0 || thresholdNum > 1) {
+      res.status(400).json({
+        success: false,
+        message: 'Threshold must be between 0 and 1',
+      });
+      return;
+    }
+
+    // Search for tools that match the query
+    const searchResults = await searchToolsByVector(query, limitNum, thresholdNum);
+
+    // Extract unique server names from search results
+    const serverNames = Array.from(new Set(searchResults.map((result) => result.serverName)));
+
+    // Get full server information for the matching servers
+    const allServers = await getServersInfo();
+    const matchingServers = allServers.filter((server) => serverNames.includes(server.name));
+
+    const response: ApiResponse = {
+      success: true,
+      data: {
+        servers: createSafeJSON(matchingServers),
+        matches: searchResults.map((result) => ({
+          serverName: result.serverName,
+          toolName: result.toolName,
+          similarity: result.similarity,
+        })),
+        query,
+        threshold: thresholdNum,
+      },
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Failed to search servers:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to search servers',
     });
   }
 };

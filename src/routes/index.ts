@@ -13,6 +13,7 @@ import {
   togglePrompt,
   updatePromptDescription,
   updateSystemConfig,
+  searchServers,
 } from '../controllers/serverController.js';
 import {
   getGroups,
@@ -93,6 +94,7 @@ export const initRoutes = (app: express.Application): void => {
 
   // API routes protected by auth middleware in middlewares/index.ts
   router.get('/servers', getAllServers);
+  router.get('/servers/search', searchServers);
   router.get('/settings', getAllSettings);
   router.post('/servers', createServer);
   router.put('/servers/:name', updateServer);
