@@ -204,6 +204,7 @@ export interface ServerConfig {
   enabled?: boolean; // Flag to enable/disable the server
   owner?: string; // Owner of the server, defaults to 'admin' user
   keepAliveInterval?: number; // Keep-alive ping interval in milliseconds (default: 60000ms for SSE servers)
+  connectionMode?: 'persistent' | 'on-demand'; // Connection strategy: 'persistent' maintains long-running connections (default), 'on-demand' connects only when tools are called
   tools?: Record<string, { enabled: boolean; description?: string }>; // Tool-specific configurations with enable/disable state and custom descriptions
   prompts?: Record<string, { enabled: boolean; description?: string }>; // Prompt-specific configurations with enable/disable state and custom descriptions
   options?: Partial<Pick<RequestOptions, 'timeout' | 'resetTimeoutOnProgress' | 'maxTotalTimeout'>>; // MCP request options configuration
@@ -312,6 +313,7 @@ export interface ServerInfo {
   options?: RequestOptions; // Options for requests
   createTime: number; // Timestamp of when the server was created
   enabled?: boolean; // Flag to indicate if the server is enabled
+  connectionMode?: 'persistent' | 'on-demand'; // Connection strategy for this server
   keepAliveIntervalId?: NodeJS.Timeout; // Timer ID for keep-alive ping interval
   config?: ServerConfig; // Reference to the original server configuration for OpenAPI passthrough headers
   oauth?: {

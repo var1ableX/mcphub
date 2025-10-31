@@ -369,6 +369,112 @@ export const createTransportFromConfig = async (name: string, conf: ServerConfig
   return transport;
 };
 
+// Helper function to connect an on-demand server temporarily
+const connectOnDemandServer = async (serverInfo: ServerInfo): Promise<void> => {
+  if (!serverInfo.config) {
+    throw new Error(`Server configuration not found for on-demand server: ${serverInfo.name}`);
+  }
+
+  console.log(`Connecting on-demand server: ${serverInfo.name}`);
+  
+  // Create transport
+  const transport = await createTransportFromConfig(serverInfo.name, serverInfo.config);
+  
+  // Create client
+  const client = new Client(
+    {
+      name: `mcp-client-${serverInfo.name}`,
+      version: '1.0.0',
+    },
+    {
+      capabilities: {
+        prompts: {},
+        resources: {},
+        tools: {},
+      },
+    },
+  );
+
+  // Get request options from server configuration
+  const serverRequestOptions = serverInfo.config.options || {};
+  const requestOptions = {
+    timeout: serverRequestOptions.timeout || 60000,
+    resetTimeoutOnProgress: serverRequestOptions.resetTimeoutOnProgress || false,
+    maxTotalTimeout: serverRequestOptions.maxTotalTimeout,
+  };
+
+  // Connect the client
+  await client.connect(transport, requestOptions);
+
+  // Update server info with client and transport
+  serverInfo.client = client;
+  serverInfo.transport = transport;
+  serverInfo.options = requestOptions;
+  serverInfo.status = 'connected';
+
+  console.log(`Successfully connected on-demand server: ${serverInfo.name}`);
+
+  // List tools if not already loaded
+  if (serverInfo.tools.length === 0) {
+    const capabilities = client.getServerCapabilities();
+    if (capabilities?.tools) {
+      try {
+        const tools = await client.listTools({}, requestOptions);
+        serverInfo.tools = tools.tools.map((tool) => ({
+          name: `${serverInfo.name}${getNameSeparator()}${tool.name}`,
+          description: tool.description || '',
+          inputSchema: cleanInputSchema(tool.inputSchema || {}),
+        }));
+        // Save tools as vector embeddings for search
+        saveToolsAsVectorEmbeddings(serverInfo.name, serverInfo.tools);
+        console.log(`Loaded ${serverInfo.tools.length} tools for on-demand server: ${serverInfo.name}`);
+      } catch (error) {
+        console.warn(`Failed to list tools for on-demand server ${serverInfo.name}:`, error);
+      }
+    }
+
+    // List prompts if available
+    if (capabilities?.prompts) {
+      try {
+        const prompts = await client.listPrompts({}, requestOptions);
+        serverInfo.prompts = prompts.prompts.map((prompt) => ({
+          name: `${serverInfo.name}${getNameSeparator()}${prompt.name}`,
+          title: prompt.title,
+          description: prompt.description,
+          arguments: prompt.arguments,
+        }));
+        console.log(`Loaded ${serverInfo.prompts.length} prompts for on-demand server: ${serverInfo.name}`);
+      } catch (error) {
+        console.warn(`Failed to list prompts for on-demand server ${serverInfo.name}:`, error);
+      }
+    }
+  }
+};
+
+// Helper function to disconnect an on-demand server
+const disconnectOnDemandServer = (serverInfo: ServerInfo): void => {
+  if (serverInfo.connectionMode !== 'on-demand') {
+    return;
+  }
+
+  console.log(`Disconnecting on-demand server: ${serverInfo.name}`);
+
+  try {
+    if (serverInfo.client) {
+      serverInfo.client.close();
+      serverInfo.client = undefined;
+    }
+    if (serverInfo.transport) {
+      serverInfo.transport.close();
+      serverInfo.transport = undefined;
+    }
+    serverInfo.status = 'disconnected';
+    console.log(`Successfully disconnected on-demand server: ${serverInfo.name}`);
+  } catch (error) {
+    console.warn(`Error disconnecting on-demand server ${serverInfo.name}:`, error);
+  }
+};
+
 // Helper function to handle client.callTool with reconnection logic
 const callToolWithReconnect = async (
   serverInfo: ServerInfo,
@@ -529,7 +635,6 @@ export const initializeClientsFromSettings = async (
         continue;
       }
 
-      let transport;
       let openApiClient;
       if (expandedConf.type === 'openapi') {
         // Handle OpenAPI type servers
@@ -600,9 +705,42 @@ export const initializeClientsFromSettings = async (
           serverInfo.error = `Failed to initialize OpenAPI server: ${error}`;
           continue;
         }
-      } else {
-        transport = await createTransportFromConfig(name, expandedConf);
       }
+
+      // Handle on-demand connection mode servers
+      // These servers connect briefly to get tools list, then disconnect
+      const connectionMode = expandedConf.connectionMode || 'persistent';
+      if (connectionMode === 'on-demand') {
+        console.log(`Initializing on-demand server: ${name}`);
+        const serverInfo: ServerInfo = {
+          name,
+          owner: expandedConf.owner,
+          status: 'disconnected',
+          error: null,
+          tools: [],
+          prompts: [],
+          createTime: Date.now(),
+          enabled: expandedConf.enabled === undefined ? true : expandedConf.enabled,
+          connectionMode: 'on-demand',
+          config: expandedConf,
+        };
+        nextServerInfos.push(serverInfo);
+
+        // Connect briefly to get tools list, then disconnect
+        try {
+          await connectOnDemandServer(serverInfo);
+          console.log(`Successfully initialized on-demand server: ${name} with ${serverInfo.tools.length} tools`);
+          // Disconnect immediately after getting tools
+          disconnectOnDemandServer(serverInfo);
+        } catch (error) {
+          console.error(`Failed to initialize on-demand server ${name}:`, error);
+          serverInfo.error = `Failed to initialize: ${error}`;
+        }
+        continue;
+      }
+
+      // Create transport for persistent connection mode servers (not OpenAPI, already handled above)
+      const transport = await createTransportFromConfig(name, expandedConf);
 
       const client = new Client(
         {
@@ -644,6 +782,7 @@ export const initializeClientsFromSettings = async (
         transport,
         options: requestOptions,
         createTime: Date.now(),
+        connectionMode: connectionMode,
         config: expandedConf, // Store reference to expanded config
       };
 
@@ -1011,8 +1150,11 @@ export const handleListToolsRequest = async (_: any, extra: any) => {
     const targetGroup = group?.startsWith('$smart/') ? group.substring(7) : undefined;
     
     // Get info about available servers, filtered by target group if specified
+    // Include both connected persistent servers and on-demand servers (even if disconnected)
     let availableServers = serverInfos.filter(
-      (server) => server.status === 'connected' && server.enabled !== false,
+      (server) => 
+        server.enabled !== false && 
+        (server.status === 'connected' || server.connectionMode === 'on-demand'),
     );
     
     // If a target group is specified, filter servers to only those in the group
@@ -1284,10 +1426,11 @@ export const handleCallToolRequest = async (request: any, extra: any) => {
         targetServerInfo = getServerByName(extra.server);
       } else {
         // Find the first server that has this tool
+        // Include both connected servers and on-demand servers (even if disconnected)
         targetServerInfo = serverInfos.find(
           (serverInfo) =>
-            serverInfo.status === 'connected' &&
             serverInfo.enabled !== false &&
+            (serverInfo.status === 'connected' || serverInfo.connectionMode === 'on-demand') &&
             serverInfo.tools.some((tool) => tool.name === toolName),
         );
       }
@@ -1363,6 +1506,11 @@ export const handleCallToolRequest = async (request: any, extra: any) => {
       }
 
       // Call the tool on the target server (MCP servers)
+      // Connect on-demand server if needed
+      if (targetServerInfo.connectionMode === 'on-demand' && !targetServerInfo.client) {
+        await connectOnDemandServer(targetServerInfo);
+      }
+
       const client = targetServerInfo.client;
       if (!client) {
         throw new Error(`Client not found for server: ${targetServerInfo.name}`);
@@ -1379,17 +1527,23 @@ export const handleCallToolRequest = async (request: any, extra: any) => {
       const separator = getNameSeparator();
       const prefix = `${targetServerInfo.name}${separator}`;
       toolName = toolName.startsWith(prefix) ? toolName.substring(prefix.length) : toolName;
-      const result = await callToolWithReconnect(
-        targetServerInfo,
-        {
-          name: toolName,
-          arguments: finalArgs,
-        },
-        targetServerInfo.options || {},
-      );
+      
+      try {
+        const result = await callToolWithReconnect(
+          targetServerInfo,
+          {
+            name: toolName,
+            arguments: finalArgs,
+          },
+          targetServerInfo.options || {},
+        );
 
-      console.log(`Tool invocation result: ${JSON.stringify(result)}`);
-      return result;
+        console.log(`Tool invocation result: ${JSON.stringify(result)}`);
+        return result;
+      } finally {
+        // Disconnect on-demand server after tool call
+        disconnectOnDemandServer(targetServerInfo);
+      }
     }
 
     // Regular tool handling
@@ -1459,6 +1613,11 @@ export const handleCallToolRequest = async (request: any, extra: any) => {
     }
 
     // Handle MCP servers
+    // Connect on-demand server if needed
+    if (serverInfo.connectionMode === 'on-demand' && !serverInfo.client) {
+      await connectOnDemandServer(serverInfo);
+    }
+
     const client = serverInfo.client;
     if (!client) {
       throw new Error(`Client not found for server: ${serverInfo.name}`);
@@ -1469,13 +1628,19 @@ export const handleCallToolRequest = async (request: any, extra: any) => {
     request.params.name = request.params.name.startsWith(prefix)
       ? request.params.name.substring(prefix.length)
       : request.params.name;
-    const result = await callToolWithReconnect(
-      serverInfo,
-      request.params,
-      serverInfo.options || {},
-    );
-    console.log(`Tool call result: ${JSON.stringify(result)}`);
-    return result;
+    
+    try {
+      const result = await callToolWithReconnect(
+        serverInfo,
+        request.params,
+        serverInfo.options || {},
+      );
+      console.log(`Tool call result: ${JSON.stringify(result)}`);
+      return result;
+    } finally {
+      // Disconnect on-demand server after tool call
+      disconnectOnDemandServer(serverInfo);
+    }
   } catch (error) {
     console.error(`Error handling CallToolRequest: ${error}`);
     return {
