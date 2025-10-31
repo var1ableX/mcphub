@@ -1,55 +1,99 @@
-import React, { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
-import ChangePasswordForm from '@/components/ChangePasswordForm'
-import { Switch } from '@/components/ui/ToggleGroup'
-import { useSettingsData } from '@/hooks/useSettingsData'
-import { useToast } from '@/contexts/ToastContext'
-import { generateRandomKey } from '@/utils/key'
-import { PermissionChecker } from '@/components/PermissionChecker'
-import { PERMISSIONS } from '@/constants/permissions'
-import { Copy, Check, Download } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import ChangePasswordForm from '@/components/ChangePasswordForm';
+import { Switch } from '@/components/ui/ToggleGroup';
+import { useSettingsData } from '@/hooks/useSettingsData';
+import { useToast } from '@/contexts/ToastContext';
+import { generateRandomKey } from '@/utils/key';
+import { PermissionChecker } from '@/components/PermissionChecker';
+import { PERMISSIONS } from '@/constants/permissions';
+import { Copy, Check, Download } from 'lucide-react';
 
 const SettingsPage: React.FC = () => {
-  const { t } = useTranslation()
-  const navigate = useNavigate()
-  const { showToast } = useToast()
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const [installConfig, setInstallConfig] = useState<{
-    pythonIndexUrl: string
-    npmRegistry: string
-    baseUrl: string
+    pythonIndexUrl: string;
+    npmRegistry: string;
+    baseUrl: string;
   }>({
     pythonIndexUrl: '',
     npmRegistry: '',
     baseUrl: 'http://localhost:3000',
-  })
+  });
 
   const [tempSmartRoutingConfig, setTempSmartRoutingConfig] = useState<{
-    dbUrl: string
-    openaiApiBaseUrl: string
-    openaiApiKey: string
-    openaiApiEmbeddingModel: string
+    dbUrl: string;
+    openaiApiBaseUrl: string;
+    openaiApiKey: string;
+    openaiApiEmbeddingModel: string;
   }>({
     dbUrl: '',
     openaiApiBaseUrl: '',
     openaiApiKey: '',
     openaiApiEmbeddingModel: '',
-  })
+  });
 
   const [tempMCPRouterConfig, setTempMCPRouterConfig] = useState<{
-    apiKey: string
-    referer: string
-    title: string
-    baseUrl: string
+    apiKey: string;
+    referer: string;
+    title: string;
+    baseUrl: string;
   }>({
     apiKey: '',
     referer: 'https://www.mcphubx.com',
     title: 'MCPHub',
     baseUrl: 'https://api.mcprouter.to/v1',
-  })
+  });
 
-  const [tempNameSeparator, setTempNameSeparator] = useState<string>('-')
+  const [tempNameSeparator, setTempNameSeparator] = useState<string>('-');
+
+  const [tempClusterConfig, setTempClusterConfig] = useState<{
+    enabled: boolean;
+    mode: 'standalone' | 'node' | 'coordinator';
+    node: {
+      id?: string;
+      name?: string;
+      coordinatorUrl: string;
+      heartbeatInterval?: number;
+      registerOnStartup?: boolean;
+    };
+    coordinator: {
+      nodeTimeout?: number;
+      cleanupInterval?: number;
+      stickySessionTimeout?: number;
+    };
+    stickySession: {
+      enabled: boolean;
+      strategy: 'consistent-hash' | 'cookie' | 'header';
+      cookieName?: string;
+      headerName?: string;
+    };
+  }>({
+    enabled: false,
+    mode: 'standalone',
+    node: {
+      id: '',
+      name: '',
+      coordinatorUrl: '',
+      heartbeatInterval: 5000,
+      registerOnStartup: true,
+    },
+    coordinator: {
+      nodeTimeout: 15000,
+      cleanupInterval: 30000,
+      stickySessionTimeout: 3600000,
+    },
+    stickySession: {
+      enabled: true,
+      strategy: 'consistent-hash',
+      cookieName: 'MCPHUB_NODE',
+      headerName: 'X-MCPHub-Node',
+    },
+  });
 
   const {
     routingConfig,
@@ -58,6 +102,7 @@ const SettingsPage: React.FC = () => {
     installConfig: savedInstallConfig,
     smartRoutingConfig,
     mcpRouterConfig,
+    clusterConfig,
     nameSeparator,
     loading,
     updateRoutingConfig,
@@ -66,16 +111,17 @@ const SettingsPage: React.FC = () => {
     updateSmartRoutingConfig,
     updateSmartRoutingConfigBatch,
     updateMCPRouterConfig,
+    updateClusterConfig,
     updateNameSeparator,
     exportMCPSettings,
-  } = useSettingsData()
+  } = useSettingsData();
 
   // Update local installConfig when savedInstallConfig changes
   useEffect(() => {
     if (savedInstallConfig) {
-      setInstallConfig(savedInstallConfig)
+      setInstallConfig(savedInstallConfig);
     }
-  }, [savedInstallConfig])
+  }, [savedInstallConfig]);
 
   // Update local tempSmartRoutingConfig when smartRoutingConfig changes
   useEffect(() => {
@@ -85,9 +131,9 @@ const SettingsPage: React.FC = () => {
         openaiApiBaseUrl: smartRoutingConfig.openaiApiBaseUrl || '',
         openaiApiKey: smartRoutingConfig.openaiApiKey || '',
         openaiApiEmbeddingModel: smartRoutingConfig.openaiApiEmbeddingModel || '',
-      })
+      });
     }
-  }, [smartRoutingConfig])
+  }, [smartRoutingConfig]);
 
   // Update local tempMCPRouterConfig when mcpRouterConfig changes
   useEffect(() => {
@@ -97,24 +143,53 @@ const SettingsPage: React.FC = () => {
         referer: mcpRouterConfig.referer || 'https://www.mcphubx.com',
         title: mcpRouterConfig.title || 'MCPHub',
         baseUrl: mcpRouterConfig.baseUrl || 'https://api.mcprouter.to/v1',
-      })
+      });
     }
-  }, [mcpRouterConfig])
+  }, [mcpRouterConfig]);
 
   // Update local tempNameSeparator when nameSeparator changes
   useEffect(() => {
-    setTempNameSeparator(nameSeparator)
-  }, [nameSeparator])
+    setTempNameSeparator(nameSeparator);
+  }, [nameSeparator]);
+
+  // Update local tempClusterConfig when clusterConfig changes
+  useEffect(() => {
+    if (clusterConfig) {
+      setTempClusterConfig({
+        enabled: clusterConfig.enabled ?? false,
+        mode: clusterConfig.mode || 'standalone',
+        node: clusterConfig.node || {
+          id: '',
+          name: '',
+          coordinatorUrl: '',
+          heartbeatInterval: 5000,
+          registerOnStartup: true,
+        },
+        coordinator: clusterConfig.coordinator || {
+          nodeTimeout: 15000,
+          cleanupInterval: 30000,
+          stickySessionTimeout: 3600000,
+        },
+        stickySession: clusterConfig.stickySession || {
+          enabled: true,
+          strategy: 'consistent-hash',
+          cookieName: 'MCPHUB_NODE',
+          headerName: 'X-MCPHub-Node',
+        },
+      });
+    }
+  }, [clusterConfig]);
 
   const [sectionsVisible, setSectionsVisible] = useState({
     routingConfig: false,
     installConfig: false,
     smartRoutingConfig: false,
     mcpRouterConfig: false,
+    clusterConfig: false,
     nameSeparator: false,
     password: false,
     exportConfig: false,
-  })
+  });
 
   const toggleSection = (
     section:
@@ -122,6 +197,7 @@ const SettingsPage: React.FC = () => {
       | 'installConfig'
       | 'smartRoutingConfig'
       | 'mcpRouterConfig'
+      | 'clusterConfig'
       | 'nameSeparator'
       | 'password'
       | 'exportConfig',
@@ -129,8 +205,8 @@ const SettingsPage: React.FC = () => {
     setSectionsVisible((prev) => ({
       ...prev,
       [section]: !prev[section],
-    }))
-  }
+    }));
+  };
 
   const handleRoutingConfigChange = async (
     key:
@@ -144,39 +220,39 @@ const SettingsPage: React.FC = () => {
     // If enableBearerAuth is turned on and there's no key, generate one first
     if (key === 'enableBearerAuth' && value === true) {
       if (!tempRoutingConfig.bearerAuthKey && !routingConfig.bearerAuthKey) {
-        const newKey = generateRandomKey()
-        handleBearerAuthKeyChange(newKey)
+        const newKey = generateRandomKey();
+        handleBearerAuthKeyChange(newKey);
 
         // Update both enableBearerAuth and bearerAuthKey in a single call
         const success = await updateRoutingConfigBatch({
           enableBearerAuth: true,
           bearerAuthKey: newKey,
-        })
+        });
 
         if (success) {
           // Update tempRoutingConfig to reflect the saved values
           setTempRoutingConfig((prev) => ({
             ...prev,
             bearerAuthKey: newKey,
-          }))
+          }));
         }
-        return
+        return;
       }
     }
 
-    await updateRoutingConfig(key, value)
-  }
+    await updateRoutingConfig(key, value);
+  };
 
   const handleBearerAuthKeyChange = (value: string) => {
     setTempRoutingConfig((prev) => ({
       ...prev,
       bearerAuthKey: value,
-    }))
-  }
+    }));
+  };
 
   const saveBearerAuthKey = async () => {
-    await updateRoutingConfig('bearerAuthKey', tempRoutingConfig.bearerAuthKey)
-  }
+    await updateRoutingConfig('bearerAuthKey', tempRoutingConfig.bearerAuthKey);
+  };
 
   const handleInstallConfigChange = (
     key: 'pythonIndexUrl' | 'npmRegistry' | 'baseUrl',
@@ -185,12 +261,12 @@ const SettingsPage: React.FC = () => {
     setInstallConfig({
       ...installConfig,
       [key]: value,
-    })
-  }
+    });
+  };
 
   const saveInstallConfig = async (key: 'pythonIndexUrl' | 'npmRegistry' | 'baseUrl') => {
-    await updateInstallConfig(key, installConfig[key])
-  }
+    await updateInstallConfig(key, installConfig[key]);
+  };
 
   const handleSmartRoutingConfigChange = (
     key: 'dbUrl' | 'openaiApiBaseUrl' | 'openaiApiKey' | 'openaiApiEmbeddingModel',
@@ -199,14 +275,14 @@ const SettingsPage: React.FC = () => {
     setTempSmartRoutingConfig({
       ...tempSmartRoutingConfig,
       [key]: value,
-    })
-  }
+    });
+  };
 
   const saveSmartRoutingConfig = async (
     key: 'dbUrl' | 'openaiApiBaseUrl' | 'openaiApiKey' | 'openaiApiEmbeddingModel',
   ) => {
-    await updateSmartRoutingConfig(key, tempSmartRoutingConfig[key])
-  }
+    await updateSmartRoutingConfig(key, tempSmartRoutingConfig[key]);
+  };
 
   const handleMCPRouterConfigChange = (
     key: 'apiKey' | 'referer' | 'title' | 'baseUrl',
@@ -215,141 +291,141 @@ const SettingsPage: React.FC = () => {
     setTempMCPRouterConfig({
       ...tempMCPRouterConfig,
       [key]: value,
-    })
-  }
+    });
+  };
 
   const saveMCPRouterConfig = async (key: 'apiKey' | 'referer' | 'title' | 'baseUrl') => {
-    await updateMCPRouterConfig(key, tempMCPRouterConfig[key])
-  }
+    await updateMCPRouterConfig(key, tempMCPRouterConfig[key]);
+  };
 
   const saveNameSeparator = async () => {
-    await updateNameSeparator(tempNameSeparator)
-  }
+    await updateNameSeparator(tempNameSeparator);
+  };
 
   const handleSmartRoutingEnabledChange = async (value: boolean) => {
     // If enabling Smart Routing, validate required fields and save any unsaved changes
     if (value) {
-      const currentDbUrl = tempSmartRoutingConfig.dbUrl || smartRoutingConfig.dbUrl
+      const currentDbUrl = tempSmartRoutingConfig.dbUrl || smartRoutingConfig.dbUrl;
       const currentOpenaiApiKey =
-        tempSmartRoutingConfig.openaiApiKey || smartRoutingConfig.openaiApiKey
+        tempSmartRoutingConfig.openaiApiKey || smartRoutingConfig.openaiApiKey;
 
       if (!currentDbUrl || !currentOpenaiApiKey) {
-        const missingFields = []
-        if (!currentDbUrl) missingFields.push(t('settings.dbUrl'))
-        if (!currentOpenaiApiKey) missingFields.push(t('settings.openaiApiKey'))
+        const missingFields = [];
+        if (!currentDbUrl) missingFields.push(t('settings.dbUrl'));
+        if (!currentOpenaiApiKey) missingFields.push(t('settings.openaiApiKey'));
 
         showToast(
           t('settings.smartRoutingValidationError', {
             fields: missingFields.join(', '),
           }),
-        )
-        return
+        );
+        return;
       }
 
       // Prepare updates object with unsaved changes and enabled status
-      const updates: any = { enabled: value }
+      const updates: any = { enabled: value };
 
       // Check for unsaved changes and include them in the batch update
       if (tempSmartRoutingConfig.dbUrl !== smartRoutingConfig.dbUrl) {
-        updates.dbUrl = tempSmartRoutingConfig.dbUrl
+        updates.dbUrl = tempSmartRoutingConfig.dbUrl;
       }
       if (tempSmartRoutingConfig.openaiApiBaseUrl !== smartRoutingConfig.openaiApiBaseUrl) {
-        updates.openaiApiBaseUrl = tempSmartRoutingConfig.openaiApiBaseUrl
+        updates.openaiApiBaseUrl = tempSmartRoutingConfig.openaiApiBaseUrl;
       }
       if (tempSmartRoutingConfig.openaiApiKey !== smartRoutingConfig.openaiApiKey) {
-        updates.openaiApiKey = tempSmartRoutingConfig.openaiApiKey
+        updates.openaiApiKey = tempSmartRoutingConfig.openaiApiKey;
       }
       if (
         tempSmartRoutingConfig.openaiApiEmbeddingModel !==
         smartRoutingConfig.openaiApiEmbeddingModel
       ) {
-        updates.openaiApiEmbeddingModel = tempSmartRoutingConfig.openaiApiEmbeddingModel
+        updates.openaiApiEmbeddingModel = tempSmartRoutingConfig.openaiApiEmbeddingModel;
       }
 
       // Save all changes in a single batch update
-      await updateSmartRoutingConfigBatch(updates)
+      await updateSmartRoutingConfigBatch(updates);
     } else {
       // If disabling, just update the enabled status
-      await updateSmartRoutingConfig('enabled', value)
+      await updateSmartRoutingConfig('enabled', value);
     }
-  }
+  };
 
   const handlePasswordChangeSuccess = () => {
     setTimeout(() => {
-      navigate('/')
-    }, 2000)
-  }
+      navigate('/');
+    }, 2000);
+  };
 
-  const [copiedConfig, setCopiedConfig] = useState(false)
-  const [mcpSettingsJson, setMcpSettingsJson] = useState<string>('')
+  const [copiedConfig, setCopiedConfig] = useState(false);
+  const [mcpSettingsJson, setMcpSettingsJson] = useState<string>('');
 
   const fetchMcpSettings = async () => {
     try {
-      const result = await exportMCPSettings()
-      console.log('Fetched MCP settings:', result)
-      const configJson = JSON.stringify(result.data, null, 2)
-      setMcpSettingsJson(configJson)
+      const result = await exportMCPSettings();
+      console.log('Fetched MCP settings:', result);
+      const configJson = JSON.stringify(result.data, null, 2);
+      setMcpSettingsJson(configJson);
     } catch (error) {
-      console.error('Error fetching MCP settings:', error)
-      showToast(t('settings.exportError') || 'Failed to fetch settings', 'error')
+      console.error('Error fetching MCP settings:', error);
+      showToast(t('settings.exportError') || 'Failed to fetch settings', 'error');
     }
-  }
+  };
 
   useEffect(() => {
     if (sectionsVisible.exportConfig && !mcpSettingsJson) {
-      fetchMcpSettings()
+      fetchMcpSettings();
     }
-  }, [sectionsVisible.exportConfig])
+  }, [sectionsVisible.exportConfig]);
 
   const handleCopyConfig = async () => {
-    if (!mcpSettingsJson) return
+    if (!mcpSettingsJson) return;
 
     try {
       if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(mcpSettingsJson)
-        setCopiedConfig(true)
-        showToast(t('common.copySuccess') || 'Copied to clipboard', 'success')
-        setTimeout(() => setCopiedConfig(false), 2000)
+        await navigator.clipboard.writeText(mcpSettingsJson);
+        setCopiedConfig(true);
+        showToast(t('common.copySuccess') || 'Copied to clipboard', 'success');
+        setTimeout(() => setCopiedConfig(false), 2000);
       } else {
         // Fallback for HTTP or unsupported clipboard API
-        const textArea = document.createElement('textarea')
-        textArea.value = mcpSettingsJson
-        textArea.style.position = 'fixed'
-        textArea.style.left = '-9999px'
-        document.body.appendChild(textArea)
-        textArea.focus()
-        textArea.select()
+        const textArea = document.createElement('textarea');
+        textArea.value = mcpSettingsJson;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
         try {
-          document.execCommand('copy')
-          setCopiedConfig(true)
-          showToast(t('common.copySuccess') || 'Copied to clipboard', 'success')
-          setTimeout(() => setCopiedConfig(false), 2000)
+          document.execCommand('copy');
+          setCopiedConfig(true);
+          showToast(t('common.copySuccess') || 'Copied to clipboard', 'success');
+          setTimeout(() => setCopiedConfig(false), 2000);
         } catch (err) {
-          showToast(t('common.copyFailed') || 'Copy failed', 'error')
-          console.error('Copy to clipboard failed:', err)
+          showToast(t('common.copyFailed') || 'Copy failed', 'error');
+          console.error('Copy to clipboard failed:', err);
         }
-        document.body.removeChild(textArea)
+        document.body.removeChild(textArea);
       }
     } catch (error) {
-      console.error('Error copying configuration:', error)
-      showToast(t('common.copyFailed') || 'Copy failed', 'error')
+      console.error('Error copying configuration:', error);
+      showToast(t('common.copyFailed') || 'Copy failed', 'error');
     }
-  }
+  };
 
   const handleDownloadConfig = () => {
-    if (!mcpSettingsJson) return
+    if (!mcpSettingsJson) return;
 
-    const blob = new Blob([mcpSettingsJson], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'mcp_settings.json'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    showToast(t('settings.exportSuccess') || 'Settings exported successfully', 'success')
-  }
+    const blob = new Blob([mcpSettingsJson], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'mcp_settings.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast(t('settings.exportSuccess') || 'Settings exported successfully', 'success');
+  };
 
   return (
     <div className="container mx-auto">
@@ -558,6 +634,432 @@ const SettingsPage: React.FC = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+        </div>
+      </PermissionChecker>
+
+      {/* Cluster Configuration Settings */}
+      <PermissionChecker permissions={PERMISSIONS.SETTINGS_CLUSTER_CONFIG}>
+        <div className="bg-white shadow rounded-lg py-4 px-6 mb-6 page-card dashboard-card">
+          <div
+            className="flex justify-between items-center cursor-pointer transition-colors duration-200 hover:text-blue-600"
+            onClick={() => toggleSection('clusterConfig')}
+          >
+            <h2 className="font-semibold text-gray-800">{t('settings.clusterConfig')}</h2>
+            <span className="text-gray-500 transition-transform duration-200">
+              {sectionsVisible.clusterConfig ? '▼' : '►'}
+            </span>
+          </div>
+
+          {sectionsVisible.clusterConfig && (
+            <div className="space-y-4 mt-4">
+              {/* Enable Cluster Mode */}
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                <div>
+                  <h3 className="font-medium text-gray-700">{t('settings.clusterEnabled')}</h3>
+                  <p className="text-sm text-gray-500">{t('settings.clusterEnabledDescription')}</p>
+                </div>
+                <Switch
+                  disabled={loading}
+                  checked={tempClusterConfig.enabled}
+                  onCheckedChange={(checked) => {
+                    setTempClusterConfig((prev) => ({ ...prev, enabled: checked }));
+                    updateClusterConfig({ enabled: checked });
+                  }}
+                />
+              </div>
+
+              {/* Cluster Mode Selection */}
+              {tempClusterConfig.enabled && (
+                <div className="p-3 bg-gray-50 rounded-md">
+                  <div className="mb-2">
+                    <h3 className="font-medium text-gray-700">{t('settings.clusterMode')}</h3>
+                    <p className="text-sm text-gray-500">{t('settings.clusterModeDescription')}</p>
+                  </div>
+                  <select
+                    value={tempClusterConfig.mode}
+                    onChange={(e) => {
+                      const mode = e.target.value as 'standalone' | 'node' | 'coordinator';
+                      setTempClusterConfig((prev) => ({ ...prev, mode }));
+                      updateClusterConfig({ mode });
+                    }}
+                    className="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    disabled={loading}
+                  >
+                    <option value="standalone">{t('settings.clusterModeStandalone')}</option>
+                    <option value="node">{t('settings.clusterModeNode')}</option>
+                    <option value="coordinator">{t('settings.clusterModeCoordinator')}</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Node Configuration */}
+              {tempClusterConfig.enabled && tempClusterConfig.mode === 'node' && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md space-y-3">
+                  <h3 className="font-semibold text-gray-800 mb-2">{t('settings.nodeConfig')}</h3>
+
+                  {/* Coordinator URL */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('settings.coordinatorUrl')} <span className="text-red-500">*</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      {t('settings.coordinatorUrlDescription')}
+                    </p>
+                    <input
+                      type="text"
+                      value={tempClusterConfig.node.coordinatorUrl}
+                      onChange={(e) => {
+                        const coordinatorUrl = e.target.value;
+                        setTempClusterConfig((prev) => ({
+                          ...prev,
+                          node: { ...prev.node, coordinatorUrl },
+                        }));
+                      }}
+                      onBlur={() => updateClusterConfig({ node: { ...tempClusterConfig.node } })}
+                      placeholder={t('settings.coordinatorUrlPlaceholder')}
+                      className="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  {/* Node ID */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('settings.nodeId')}
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">{t('settings.nodeIdDescription')}</p>
+                    <input
+                      type="text"
+                      value={tempClusterConfig.node.id || ''}
+                      onChange={(e) => {
+                        const id = e.target.value;
+                        setTempClusterConfig((prev) => ({
+                          ...prev,
+                          node: { ...prev.node, id },
+                        }));
+                      }}
+                      onBlur={() => updateClusterConfig({ node: { ...tempClusterConfig.node } })}
+                      placeholder={t('settings.nodeIdPlaceholder')}
+                      className="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  {/* Node Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('settings.nodeName')}
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      {t('settings.nodeNameDescription')}
+                    </p>
+                    <input
+                      type="text"
+                      value={tempClusterConfig.node.name || ''}
+                      onChange={(e) => {
+                        const name = e.target.value;
+                        setTempClusterConfig((prev) => ({
+                          ...prev,
+                          node: { ...prev.node, name },
+                        }));
+                      }}
+                      onBlur={() => updateClusterConfig({ node: { ...tempClusterConfig.node } })}
+                      placeholder={t('settings.nodeNamePlaceholder')}
+                      className="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  {/* Heartbeat Interval */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('settings.heartbeatInterval')}
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      {t('settings.heartbeatIntervalDescription')}
+                    </p>
+                    <input
+                      type="number"
+                      value={tempClusterConfig.node.heartbeatInterval || 5000}
+                      onChange={(e) => {
+                        const heartbeatInterval = parseInt(e.target.value);
+                        setTempClusterConfig((prev) => ({
+                          ...prev,
+                          node: { ...prev.node, heartbeatInterval },
+                        }));
+                      }}
+                      onBlur={() => updateClusterConfig({ node: { ...tempClusterConfig.node } })}
+                      placeholder={t('settings.heartbeatIntervalPlaceholder')}
+                      className="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      disabled={loading}
+                      min="1000"
+                      step="1000"
+                    />
+                  </div>
+
+                  {/* Register on Startup */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        {t('settings.registerOnStartup')}
+                      </label>
+                      <p className="text-xs text-gray-500">
+                        {t('settings.registerOnStartupDescription')}
+                      </p>
+                    </div>
+                    <Switch
+                      disabled={loading}
+                      checked={tempClusterConfig.node.registerOnStartup ?? true}
+                      onCheckedChange={(checked) => {
+                        setTempClusterConfig((prev) => ({
+                          ...prev,
+                          node: { ...prev.node, registerOnStartup: checked },
+                        }));
+                        updateClusterConfig({
+                          node: { ...tempClusterConfig.node, registerOnStartup: checked },
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Coordinator Configuration */}
+              {tempClusterConfig.enabled && tempClusterConfig.mode === 'coordinator' && (
+                <div className="p-3 bg-purple-50 border border-purple-200 rounded-md space-y-3">
+                  <h3 className="font-semibold text-gray-800 mb-2">
+                    {t('settings.coordinatorConfig')}
+                  </h3>
+
+                  {/* Node Timeout */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('settings.nodeTimeout')}
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      {t('settings.nodeTimeoutDescription')}
+                    </p>
+                    <input
+                      type="number"
+                      value={tempClusterConfig.coordinator.nodeTimeout || 15000}
+                      onChange={(e) => {
+                        const nodeTimeout = parseInt(e.target.value);
+                        setTempClusterConfig((prev) => ({
+                          ...prev,
+                          coordinator: { ...prev.coordinator, nodeTimeout },
+                        }));
+                      }}
+                      onBlur={() =>
+                        updateClusterConfig({ coordinator: { ...tempClusterConfig.coordinator } })
+                      }
+                      placeholder={t('settings.nodeTimeoutPlaceholder')}
+                      className="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      disabled={loading}
+                      min="5000"
+                      step="1000"
+                    />
+                  </div>
+
+                  {/* Cleanup Interval */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('settings.cleanupInterval')}
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      {t('settings.cleanupIntervalDescription')}
+                    </p>
+                    <input
+                      type="number"
+                      value={tempClusterConfig.coordinator.cleanupInterval || 30000}
+                      onChange={(e) => {
+                        const cleanupInterval = parseInt(e.target.value);
+                        setTempClusterConfig((prev) => ({
+                          ...prev,
+                          coordinator: { ...prev.coordinator, cleanupInterval },
+                        }));
+                      }}
+                      onBlur={() =>
+                        updateClusterConfig({ coordinator: { ...tempClusterConfig.coordinator } })
+                      }
+                      placeholder={t('settings.cleanupIntervalPlaceholder')}
+                      className="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      disabled={loading}
+                      min="10000"
+                      step="5000"
+                    />
+                  </div>
+
+                  {/* Sticky Session Timeout */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('settings.stickySessionTimeout')}
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      {t('settings.stickySessionTimeoutDescription')}
+                    </p>
+                    <input
+                      type="number"
+                      value={tempClusterConfig.coordinator.stickySessionTimeout || 3600000}
+                      onChange={(e) => {
+                        const stickySessionTimeout = parseInt(e.target.value);
+                        setTempClusterConfig((prev) => ({
+                          ...prev,
+                          coordinator: { ...prev.coordinator, stickySessionTimeout },
+                        }));
+                      }}
+                      onBlur={() =>
+                        updateClusterConfig({ coordinator: { ...tempClusterConfig.coordinator } })
+                      }
+                      placeholder={t('settings.stickySessionTimeoutPlaceholder')}
+                      className="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      disabled={loading}
+                      min="60000"
+                      step="60000"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Sticky Session Configuration */}
+              {tempClusterConfig.enabled &&
+                (tempClusterConfig.mode === 'coordinator' || tempClusterConfig.mode === 'node') && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-md space-y-3">
+                    <h3 className="font-semibold text-gray-800 mb-2">
+                      {t('settings.stickySessionConfig')}
+                    </h3>
+
+                    {/* Enable Sticky Sessions */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          {t('settings.stickySessionEnabled')}
+                        </label>
+                        <p className="text-xs text-gray-500">
+                          {t('settings.stickySessionEnabledDescription')}
+                        </p>
+                      </div>
+                      <Switch
+                        disabled={loading}
+                        checked={tempClusterConfig.stickySession.enabled}
+                        onCheckedChange={(checked) => {
+                          setTempClusterConfig((prev) => ({
+                            ...prev,
+                            stickySession: { ...prev.stickySession, enabled: checked },
+                          }));
+                          updateClusterConfig({
+                            stickySession: { ...tempClusterConfig.stickySession, enabled: checked },
+                          });
+                        }}
+                      />
+                    </div>
+
+                    {tempClusterConfig.stickySession.enabled && (
+                      <>
+                        {/* Session Strategy */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {t('settings.stickySessionStrategy')}
+                          </label>
+                          <p className="text-xs text-gray-500 mb-2">
+                            {t('settings.stickySessionStrategyDescription')}
+                          </p>
+                          <select
+                            value={tempClusterConfig.stickySession.strategy}
+                            onChange={(e) => {
+                              const strategy = e.target.value as
+                                | 'consistent-hash'
+                                | 'cookie'
+                                | 'header';
+                              setTempClusterConfig((prev) => ({
+                                ...prev,
+                                stickySession: { ...prev.stickySession, strategy },
+                              }));
+                              updateClusterConfig({
+                                stickySession: { ...tempClusterConfig.stickySession, strategy },
+                              });
+                            }}
+                            className="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            disabled={loading}
+                          >
+                            <option value="consistent-hash">
+                              {t('settings.stickySessionStrategyConsistentHash')}
+                            </option>
+                            <option value="cookie">
+                              {t('settings.stickySessionStrategyCookie')}
+                            </option>
+                            <option value="header">
+                              {t('settings.stickySessionStrategyHeader')}
+                            </option>
+                          </select>
+                        </div>
+
+                        {/* Cookie Name (only for cookie strategy) */}
+                        {tempClusterConfig.stickySession.strategy === 'cookie' && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t('settings.cookieName')}
+                            </label>
+                            <p className="text-xs text-gray-500 mb-2">
+                              {t('settings.cookieNameDescription')}
+                            </p>
+                            <input
+                              type="text"
+                              value={tempClusterConfig.stickySession.cookieName || 'MCPHUB_NODE'}
+                              onChange={(e) => {
+                                const cookieName = e.target.value;
+                                setTempClusterConfig((prev) => ({
+                                  ...prev,
+                                  stickySession: { ...prev.stickySession, cookieName },
+                                }));
+                              }}
+                              onBlur={() =>
+                                updateClusterConfig({
+                                  stickySession: { ...tempClusterConfig.stickySession },
+                                })
+                              }
+                              placeholder={t('settings.cookieNamePlaceholder')}
+                              className="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              disabled={loading}
+                            />
+                          </div>
+                        )}
+
+                        {/* Header Name (only for header strategy) */}
+                        {tempClusterConfig.stickySession.strategy === 'header' && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t('settings.headerName')}
+                            </label>
+                            <p className="text-xs text-gray-500 mb-2">
+                              {t('settings.headerNameDescription')}
+                            </p>
+                            <input
+                              type="text"
+                              value={tempClusterConfig.stickySession.headerName || 'X-MCPHub-Node'}
+                              onChange={(e) => {
+                                const headerName = e.target.value;
+                                setTempClusterConfig((prev) => ({
+                                  ...prev,
+                                  stickySession: { ...prev.stickySession, headerName },
+                                }));
+                              }}
+                              onBlur={() =>
+                                updateClusterConfig({
+                                  stickySession: { ...tempClusterConfig.stickySession },
+                                })
+                              }
+                              placeholder={t('settings.headerNamePlaceholder')}
+                              className="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              disabled={loading}
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
             </div>
           )}
         </div>
@@ -794,7 +1296,10 @@ const SettingsPage: React.FC = () => {
       </PermissionChecker>
 
       {/* Change Password */}
-      <div className="bg-white shadow rounded-lg py-4 px-6 mb-6 dashboard-card" data-section="password">
+      <div
+        className="bg-white shadow rounded-lg py-4 px-6 mb-6 dashboard-card"
+        data-section="password"
+      >
         <div
           className="flex justify-between items-center cursor-pointer"
           onClick={() => toggleSection('password')}
@@ -864,7 +1369,7 @@ const SettingsPage: React.FC = () => {
         </div>
       </PermissionChecker>
     </div>
-  )
-}
+  );
+};
 
-export default SettingsPage
+export default SettingsPage;

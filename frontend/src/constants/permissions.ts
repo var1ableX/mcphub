@@ -5,6 +5,7 @@ export const PERMISSIONS = {
   SETTINGS_SKIP_AUTH: 'settings:skip_auth',
   SETTINGS_INSTALL_CONFIG: 'settings:install_config',
   SETTINGS_EXPORT_CONFIG: 'settings:export_config',
+  SETTINGS_CLUSTER_CONFIG: 'settings:cluster_config',
 } as const;
 
 export default PERMISSIONS;

@@ -508,7 +508,7 @@ export const updateToolDescription = async (req: Request, res: Response): Promis
 
 export const updateSystemConfig = (req: Request, res: Response): void => {
   try {
-    const { routing, install, smartRouting, mcpRouter, nameSeparator } = req.body;
+    const { routing, install, smartRouting, mcpRouter, nameSeparator, cluster } = req.body;
     const currentUser = (req as any).user;
 
     if (
@@ -533,7 +533,8 @@ export const updateSystemConfig = (req: Request, res: Response): void => {
           typeof mcpRouter.referer !== 'string' &&
           typeof mcpRouter.title !== 'string' &&
           typeof mcpRouter.baseUrl !== 'string')) &&
-      typeof nameSeparator !== 'string'
+      typeof nameSeparator !== 'string' &&
+      !cluster
     ) {
       res.status(400).json({
         success: false,
@@ -607,6 +608,13 @@ export const updateSystemConfig = (req: Request, res: Response): void => {
         referer: 'https://www.mcphubx.com',
         title: 'MCPHub',
         baseUrl: 'https://api.mcprouter.to/v1',
+      };
+    }
+
+    if (!settings.systemConfig.cluster) {
+      settings.systemConfig.cluster = {
+        enabled: false,
+        mode: 'standalone',
       };
     }
 
@@ -717,6 +725,88 @@ export const updateSystemConfig = (req: Request, res: Response): void => {
 
     if (typeof nameSeparator === 'string') {
       settings.systemConfig.nameSeparator = nameSeparator;
+    }
+
+    if (cluster) {
+      if (typeof cluster.enabled === 'boolean') {
+        settings.systemConfig.cluster.enabled = cluster.enabled;
+      }
+      if (
+        typeof cluster.mode === 'string' &&
+        ['standalone', 'node', 'coordinator'].includes(cluster.mode)
+      ) {
+        settings.systemConfig.cluster.mode = cluster.mode as 'standalone' | 'node' | 'coordinator';
+      }
+
+      // Node configuration
+      if (cluster.node) {
+        if (!settings.systemConfig.cluster.node) {
+          settings.systemConfig.cluster.node = {
+            coordinatorUrl: '',
+          };
+        }
+        if (typeof cluster.node.id === 'string') {
+          settings.systemConfig.cluster.node.id = cluster.node.id;
+        }
+        if (typeof cluster.node.name === 'string') {
+          settings.systemConfig.cluster.node.name = cluster.node.name;
+        }
+        if (typeof cluster.node.coordinatorUrl === 'string') {
+          settings.systemConfig.cluster.node.coordinatorUrl = cluster.node.coordinatorUrl;
+        }
+        if (typeof cluster.node.heartbeatInterval === 'number') {
+          settings.systemConfig.cluster.node.heartbeatInterval = cluster.node.heartbeatInterval;
+        }
+        if (typeof cluster.node.registerOnStartup === 'boolean') {
+          settings.systemConfig.cluster.node.registerOnStartup = cluster.node.registerOnStartup;
+        }
+      }
+
+      // Coordinator configuration
+      if (cluster.coordinator) {
+        if (!settings.systemConfig.cluster.coordinator) {
+          settings.systemConfig.cluster.coordinator = {};
+        }
+        if (typeof cluster.coordinator.nodeTimeout === 'number') {
+          settings.systemConfig.cluster.coordinator.nodeTimeout = cluster.coordinator.nodeTimeout;
+        }
+        if (typeof cluster.coordinator.cleanupInterval === 'number') {
+          settings.systemConfig.cluster.coordinator.cleanupInterval =
+            cluster.coordinator.cleanupInterval;
+        }
+        if (typeof cluster.coordinator.stickySessionTimeout === 'number') {
+          settings.systemConfig.cluster.coordinator.stickySessionTimeout =
+            cluster.coordinator.stickySessionTimeout;
+        }
+      }
+
+      // Sticky session configuration
+      if (cluster.stickySession) {
+        if (!settings.systemConfig.cluster.stickySession) {
+          settings.systemConfig.cluster.stickySession = {
+            enabled: true,
+            strategy: 'consistent-hash',
+          };
+        }
+        if (typeof cluster.stickySession.enabled === 'boolean') {
+          settings.systemConfig.cluster.stickySession.enabled = cluster.stickySession.enabled;
+        }
+        if (
+          typeof cluster.stickySession.strategy === 'string' &&
+          ['consistent-hash', 'cookie', 'header'].includes(cluster.stickySession.strategy)
+        ) {
+          settings.systemConfig.cluster.stickySession.strategy = cluster.stickySession.strategy as
+            | 'consistent-hash'
+            | 'cookie'
+            | 'header';
+        }
+        if (typeof cluster.stickySession.cookieName === 'string') {
+          settings.systemConfig.cluster.stickySession.cookieName = cluster.stickySession.cookieName;
+        }
+        if (typeof cluster.stickySession.headerName === 'string') {
+          settings.systemConfig.cluster.stickySession.headerName = cluster.stickySession.headerName;
+        }
+      }
     }
 
     if (saveSettings(settings, currentUser)) {

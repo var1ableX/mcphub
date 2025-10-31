@@ -34,6 +34,35 @@ interface MCPRouterConfig {
   baseUrl: string;
 }
 
+interface ClusterNodeConfig {
+  id?: string;
+  name?: string;
+  coordinatorUrl: string;
+  heartbeatInterval?: number;
+  registerOnStartup?: boolean;
+}
+
+interface ClusterCoordinatorConfig {
+  nodeTimeout?: number;
+  cleanupInterval?: number;
+  stickySessionTimeout?: number;
+}
+
+interface ClusterStickySessionConfig {
+  enabled: boolean;
+  strategy: 'consistent-hash' | 'cookie' | 'header';
+  cookieName?: string;
+  headerName?: string;
+}
+
+interface ClusterConfig {
+  enabled: boolean;
+  mode: 'standalone' | 'node' | 'coordinator';
+  node?: ClusterNodeConfig;
+  coordinator?: ClusterCoordinatorConfig;
+  stickySession?: ClusterStickySessionConfig;
+}
+
 interface SystemSettings {
   systemConfig?: {
     routing?: RoutingConfig;
@@ -41,6 +70,7 @@ interface SystemSettings {
     smartRouting?: SmartRoutingConfig;
     mcpRouter?: MCPRouterConfig;
     nameSeparator?: string;
+    cluster?: ClusterConfig;
   };
 }
 
@@ -83,6 +113,27 @@ export const useSettingsData = () => {
     referer: 'https://www.mcphubx.com',
     title: 'MCPHub',
     baseUrl: 'https://api.mcprouter.to/v1',
+  });
+
+  const [clusterConfig, setClusterConfig] = useState<ClusterConfig>({
+    enabled: false,
+    mode: 'standalone',
+    node: {
+      coordinatorUrl: '',
+      heartbeatInterval: 5000,
+      registerOnStartup: true,
+    },
+    coordinator: {
+      nodeTimeout: 15000,
+      cleanupInterval: 30000,
+      stickySessionTimeout: 3600000,
+    },
+    stickySession: {
+      enabled: true,
+      strategy: 'consistent-hash',
+      cookieName: 'MCPHUB_NODE',
+      headerName: 'X-MCPHub-Node',
+    },
   });
 
   const [nameSeparator, setNameSeparator] = useState<string>('-');
@@ -140,6 +191,28 @@ export const useSettingsData = () => {
       }
       if (data.success && data.data?.systemConfig?.nameSeparator !== undefined) {
         setNameSeparator(data.data.systemConfig.nameSeparator);
+      }
+      if (data.success && data.data?.systemConfig?.cluster) {
+        setClusterConfig({
+          enabled: data.data.systemConfig.cluster.enabled ?? false,
+          mode: data.data.systemConfig.cluster.mode || 'standalone',
+          node: data.data.systemConfig.cluster.node || {
+            coordinatorUrl: '',
+            heartbeatInterval: 5000,
+            registerOnStartup: true,
+          },
+          coordinator: data.data.systemConfig.cluster.coordinator || {
+            nodeTimeout: 15000,
+            cleanupInterval: 30000,
+            stickySessionTimeout: 3600000,
+          },
+          stickySession: data.data.systemConfig.cluster.stickySession || {
+            enabled: true,
+            strategy: 'consistent-hash',
+            cookieName: 'MCPHUB_NODE',
+            headerName: 'X-MCPHub-Node',
+          },
+        });
       }
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -420,6 +493,39 @@ export const useSettingsData = () => {
     }
   };
 
+  // Update cluster configuration
+  const updateClusterConfig = async (updates: Partial<ClusterConfig>) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await apiPut('/system-config', {
+        cluster: updates,
+      });
+
+      if (data.success) {
+        setClusterConfig({
+          ...clusterConfig,
+          ...updates,
+        });
+        showToast(t('settings.systemConfigUpdated'));
+        return true;
+      } else {
+        showToast(data.message || t('errors.failedToUpdateSystemConfig'));
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to update cluster config:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update cluster config';
+      setError(errorMessage);
+      showToast(errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const exportMCPSettings = async (serverName?: string) => {
     setLoading(true);
     setError(null);
@@ -455,6 +561,7 @@ export const useSettingsData = () => {
     installConfig,
     smartRoutingConfig,
     mcpRouterConfig,
+    clusterConfig,
     nameSeparator,
     loading,
     error,
@@ -468,6 +575,7 @@ export const useSettingsData = () => {
     updateRoutingConfigBatch,
     updateMCPRouterConfig,
     updateMCPRouterConfigBatch,
+    updateClusterConfig,
     updateNameSeparator,
     exportMCPSettings,
   };
