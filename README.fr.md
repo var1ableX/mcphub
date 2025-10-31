@@ -57,6 +57,15 @@ Créez un fichier `mcp_settings.json` pour personnaliser les paramètres de votr
 }
 ```
 
+#### Exemples de Configuration
+
+Pour des configurations spécifiques de serveurs MCP, consultez le répertoire [examples](./examples/) :
+
+- **[Démarrage rapide Jira Cloud](./examples/QUICK_START_JIRA.md)** - Guide de configuration en 5 minutes pour Jira Cloud
+- **[Guide complet Atlassian/Jira](./examples/README_ATLASSIAN_JIRA.md)** - Configuration détaillée pour Jira et Confluence
+- **[Variables d'environnement](./examples/mcp_settings_with_env_vars.json)** - Utilisation de variables d'environnement dans la configuration
+- **[OpenAPI Schema](./examples/openapi-schema-config.json)** - Serveurs MCP basés sur OpenAPI
+
 ### Déploiement avec Docker
 
 **Recommandé** : Montez votre configuration personnalisée :

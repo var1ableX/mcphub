@@ -59,6 +59,15 @@ Create a `mcp_settings.json` file to customize your server settings:
 }
 ```
 
+#### Configuration Examples
+
+For specific MCP server configurations, see the [examples](./examples/) directory:
+
+- **[Jira Cloud Quick Start](./examples/QUICK_START_JIRA.md)** - 5-minute setup guide for Jira Cloud
+- **[Atlassian/Jira Complete Guide](./examples/README_ATLASSIAN_JIRA.md)** - Detailed setup for Jira and Confluence
+- **[Environment Variables](./examples/mcp_settings_with_env_vars.json)** - Using environment variables in configuration
+- **[OpenAPI Schema](./examples/openapi-schema-config.json)** - OpenAPI-based MCP servers
+
 #### OAuth Configuration (Optional)
 
 MCPHub supports OAuth 2.0 for authenticating with upstream MCP servers. See the [OAuth feature guide](docs/features/oauth.mdx) for a full walkthrough. In practice you will run into two configuration patterns:

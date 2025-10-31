@@ -57,6 +57,15 @@ MCPHub 通过将多个 MCP（Model Context Protocol）服务器组织为灵活�
 }
 ```
 
+#### 配置示例
+
+有关特定 MCP 服务器配置，请参阅 [examples](./examples/) 目录：
+
+- **[Jira Cloud 快速入门](./examples/QUICK_START_JIRA.md)** - Jira Cloud 5 分钟配置指南
+- **[Atlassian/Jira 完整指南](./examples/README_ATLASSIAN_JIRA.md)** - Jira 和 Confluence 详细设置
+- **[环境变量](./examples/mcp_settings_with_env_vars.json)** - 在配置中使用环境变量
+- **[OpenAPI Schema](./examples/openapi-schema-config.json)** - 基于 OpenAPI 的 MCP 服务器
+
 #### OAuth 配置（可选）
 
 MCPHub 支持通过 OAuth 2.0 访问上游 MCP 服务器。完整说明请参阅[《OAuth 功能指南》](docs/zh/features/oauth.mdx)。实际使用中通常会遇到两类配置：
