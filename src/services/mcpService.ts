@@ -136,6 +136,45 @@ const setupKeepAlive = (serverInfo: ServerInfo, serverConfig: ServerConfig): voi
   );
 };
 
+// Helper function to set up transport event handlers for connection monitoring
+const setupTransportEventHandlers = (serverInfo: ServerInfo): void => {
+  if (!serverInfo.transport) {
+    return;
+  }
+
+  // Set up onclose handler to update status when connection closes
+  serverInfo.transport.onclose = () => {
+    console.log(`Transport closed for server: ${serverInfo.name}`);
+    if (serverInfo.status === 'connected') {
+      serverInfo.status = 'disconnected';
+      serverInfo.error = 'Connection closed';
+    }
+    
+    // Clear keep-alive interval if it exists
+    if (serverInfo.keepAliveIntervalId) {
+      clearInterval(serverInfo.keepAliveIntervalId);
+      serverInfo.keepAliveIntervalId = undefined;
+    }
+  };
+
+  // Set up onerror handler to update status on connection errors
+  serverInfo.transport.onerror = (error: Error) => {
+    console.error(`Transport error for server ${serverInfo.name}:`, error);
+    if (serverInfo.status === 'connected') {
+      serverInfo.status = 'disconnected';
+      serverInfo.error = `Transport error: ${error.message}`;
+    }
+    
+    // Clear keep-alive interval if it exists
+    if (serverInfo.keepAliveIntervalId) {
+      clearInterval(serverInfo.keepAliveIntervalId);
+      serverInfo.keepAliveIntervalId = undefined;
+    }
+  };
+
+  console.log(`Transport event handlers set up for server: ${serverInfo.name}`);
+};
+
 export const initUpstreamServers = async (): Promise<void> => {
   // Initialize OAuth clients for servers with dynamic registration
   await initializeAllOAuthClients();
@@ -440,6 +479,9 @@ const callToolWithReconnect = async (
           serverInfo.transport = newTransport;
           serverInfo.status = 'connected';
 
+          // Set up transport event handlers for the new connection
+          setupTransportEventHandlers(serverInfo);
+
           // Reload tools list after reconnection
           try {
             const tools = await client.listTools({}, serverInfo.options || {});
@@ -713,6 +755,9 @@ export const initializeClientsFromSettings = async (
           if (!dataError) {
             serverInfo.status = 'connected';
             serverInfo.error = null;
+
+            // Set up transport event handlers for connection monitoring
+            setupTransportEventHandlers(serverInfo);
 
             // Set up keep-alive ping for SSE connections
             setupKeepAlive(serverInfo, expandedConf);
