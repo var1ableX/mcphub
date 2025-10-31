@@ -166,8 +166,11 @@ To manually test the fix:
 ## Compatibility
 
 - **Backwards Compatible**: No breaking changes to existing functionality
-- **SDK Version**: Works with `@modelcontextprotocol/sdk` v1.20.2+
+- **SDK Version**: Requires `@modelcontextprotocol/sdk` v1.20.2 or higher (current version in use)
 - **Node.js**: Compatible with all supported Node.js versions
+- **Transport Types**: Works with SSEClientTransport, StreamableHTTPClientTransport, and StdioClientTransport
+
+Note: The `onclose` and `onerror` event handlers are part of the Transport interface in the MCP SDK and have been available since early versions. The current implementation has been tested with SDK v1.20.2.
 
 ## Future Enhancements
 

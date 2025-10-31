@@ -136,6 +136,15 @@ const setupKeepAlive = (serverInfo: ServerInfo, serverConfig: ServerConfig): voi
   );
 };
 
+// Helper function to clean up server resources on disconnection
+const cleanupServerResources = (serverInfo: ServerInfo): void => {
+  // Clear keep-alive interval if it exists
+  if (serverInfo.keepAliveIntervalId) {
+    clearInterval(serverInfo.keepAliveIntervalId);
+    serverInfo.keepAliveIntervalId = undefined;
+  }
+};
+
 // Helper function to set up transport event handlers for connection monitoring
 const setupTransportEventHandlers = (serverInfo: ServerInfo): void => {
   if (!serverInfo.transport) {
@@ -145,31 +154,25 @@ const setupTransportEventHandlers = (serverInfo: ServerInfo): void => {
   // Set up onclose handler to update status when connection closes
   serverInfo.transport.onclose = () => {
     console.log(`Transport closed for server: ${serverInfo.name}`);
-    if (serverInfo.status === 'connected') {
+    // Update status to disconnected if not already in a terminal state
+    if (serverInfo.status === 'connected' || serverInfo.status === 'connecting') {
       serverInfo.status = 'disconnected';
       serverInfo.error = 'Connection closed';
     }
     
-    // Clear keep-alive interval if it exists
-    if (serverInfo.keepAliveIntervalId) {
-      clearInterval(serverInfo.keepAliveIntervalId);
-      serverInfo.keepAliveIntervalId = undefined;
-    }
+    cleanupServerResources(serverInfo);
   };
 
   // Set up onerror handler to update status on connection errors
   serverInfo.transport.onerror = (error: Error) => {
     console.error(`Transport error for server ${serverInfo.name}:`, error);
-    if (serverInfo.status === 'connected') {
+    // Update status to disconnected if not already in a terminal state
+    if (serverInfo.status === 'connected' || serverInfo.status === 'connecting') {
       serverInfo.status = 'disconnected';
       serverInfo.error = `Transport error: ${error.message}`;
     }
     
-    // Clear keep-alive interval if it exists
-    if (serverInfo.keepAliveIntervalId) {
-      clearInterval(serverInfo.keepAliveIntervalId);
-      serverInfo.keepAliveIntervalId = undefined;
-    }
+    cleanupServerResources(serverInfo);
   };
 
   console.log(`Transport event handlers set up for server: ${serverInfo.name}`);
