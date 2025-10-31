@@ -471,7 +471,13 @@ const disconnectOnDemandServer = (serverInfo: ServerInfo): void => {
     serverInfo.status = 'disconnected';
     console.log(`Successfully disconnected on-demand server: ${serverInfo.name}`);
   } catch (error) {
+    // Log disconnect errors but don't throw - this is cleanup code that shouldn't fail the request
+    // The connection is likely already closed if we get an error here
     console.warn(`Error disconnecting on-demand server ${serverInfo.name}:`, error);
+    // Force status to disconnected even if cleanup had errors
+    serverInfo.status = 'disconnected';
+    serverInfo.client = undefined;
+    serverInfo.transport = undefined;
   }
 };
 
@@ -1281,6 +1287,10 @@ Available servers: ${serversList}`,
 export const handleCallToolRequest = async (request: any, extra: any) => {
   console.log(`Handling CallToolRequest for tool: ${JSON.stringify(request.params)}`);
   try {
+    // Note: On-demand server connection and disconnection are handled in the specific
+    // code paths below (call_tool and regular tool handling) with try-finally blocks.
+    // This outer try-catch only handles errors from operations that don't connect servers.
+    
     // Special handling for agent group tools
     if (request.params.name === 'search_tools') {
       const { query, limit = 10 } = request.params.arguments || {};
