@@ -72,9 +72,13 @@ MCPHub uses several configuration files:
 
 ### Optional Fields
 
-| Field          | Type    | Default         | Description                 |
-| -------------- | ------- | --------------- | --------------------------- |
-| `env`          | object  | `{}`            | Environment variables       |
+| Field            | Type    | Default         | Description                                                           |
+| ---------------- | ------- | --------------- | --------------------------------------------------------------------- |
+| `env`            | object  | `{}`            | Environment variables                                                 |
+| `connectionMode` | string  | `"persistent"`  | Connection strategy: `"persistent"` or `"on-demand"`                  |
+| `enabled`        | boolean | `true`          | Enable/disable the server                                             |
+| `keepAliveInterval` | number | `60000`      | Keep-alive ping interval for SSE connections (milliseconds)           |
+| `options`        | object  | `{}`            | MCP request options (timeout, resetTimeoutOnProgress, maxTotalTimeout)|
 
 ## Common MCP Server Examples
 
@@ -237,6 +241,68 @@ MCPHub uses several configuration files:
   }
 }
 ```
+
+## Connection Modes
+
+MCPHub supports two connection strategies for MCP servers:
+
+### Persistent Connection (Default)
+
+Persistent mode maintains a long-running connection to the MCP server. This is the default and recommended mode for most servers.
+
+**Use cases:**
+- Servers that maintain state between requests
+- Servers with slow startup times
+- Servers designed for long-running connections
+
+**Example:**
+```json
+{
+  "github": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-github"],
+    "connectionMode": "persistent",
+    "env": {
+      "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+    }
+  }
+}
+```
+
+### On-Demand Connection
+
+On-demand mode connects only when a tool is invoked, then disconnects immediately after. This is ideal for servers that:
+- Don't support long-running connections
+- Are designed for one-time use
+- Exit automatically after handling requests
+
+**Use cases:**
+- PDF processing tools that exit after each operation
+- One-time command-line utilities
+- Servers with connection stability issues
+- Resource-intensive servers that shouldn't run continuously
+
+**Example:**
+```json
+{
+  "pdf-reader": {
+    "command": "npx",
+    "args": ["-y", "pdf-mcp-server"],
+    "connectionMode": "on-demand",
+    "env": {
+      "PDF_CACHE_DIR": "/tmp/pdf-cache"
+    }
+  }
+}
+```
+
+**Benefits of on-demand mode:**
+- Avoids "Connection closed" errors for ephemeral services
+- Reduces resource usage for infrequently used tools
+- Better suited for stateless operations
+- Handles servers that automatically exit after operations
+
+**Note:** On-demand servers briefly connect during initialization to discover available tools, then disconnect. The connection is re-established only when a tool from that server is actually invoked.
 
 ## Advanced Configuration
 

@@ -98,6 +98,34 @@ Manual registration example:
 
 For manual providers, create the OAuth App in the upstream console, set the redirect URI to `http://localhost:3000/oauth/callback` (or your deployed domain), and then plug the credentials into the dashboard or config file.
 
+#### Connection Modes (Optional)
+
+MCPHub supports two connection strategies:
+
+- **`persistent` (default)**: Maintains long-running connections for stateful servers
+- **`on-demand`**: Connects only when needed, ideal for ephemeral servers that exit after operations
+
+Example for one-time use servers:
+
+```json
+{
+  "mcpServers": {
+    "pdf-reader": {
+      "command": "npx",
+      "args": ["-y", "pdf-mcp-server"],
+      "connectionMode": "on-demand"
+    }
+  }
+}
+```
+
+Use `on-demand` mode for servers that:
+- Don't support long-running connections
+- Exit automatically after handling requests
+- Experience "Connection closed" errors
+
+See the [Configuration Guide](docs/configuration/mcp-settings.mdx) for more details.
+
 ### Docker Deployment
 
 **Recommended**: Mount your custom config:
