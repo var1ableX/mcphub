@@ -268,7 +268,15 @@
       "recentServers": "Recent Servers"
     },
     "servers": {
-      "title": "Servers Management"
+      "title": "Servers Management",
+      "semanticSearch": "Intelligent search for tools...",
+      "semanticSearchPlaceholder": "Describe the functionality you need, e.g.: maps, weather, file processing",
+      "similarityThreshold": "Similarity Threshold",
+      "similarityThresholdHelp": "Higher values return more precise results, lower values return broader matches",
+      "searchButton": "Search",
+      "clearSearch": "Clear Search",
+      "searchResults": "Found {{count}} matching server(s)",
+      "noSearchResults": "No matching servers found"
     },
     "groups": {
       "title": "Group Management"

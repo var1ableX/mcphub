@@ -269,7 +269,15 @@
       "recentServers": "最近的服务器"
     },
     "servers": {
-      "title": "服务器管理"
+      "title": "服务器管理",
+      "semanticSearch": "智能搜索工具...",
+      "semanticSearchPlaceholder": "描述您需要的功能，例如：地图、天气、文件处理",
+      "similarityThreshold": "相似度阈值",
+      "similarityThresholdHelp": "较高值返回更精确结果，较低值返回更广泛匹配",
+      "searchButton": "搜索",
+      "clearSearch": "清除搜索",
+      "searchResults": "找到 {{count}} 个匹配的服务器",
+      "noSearchResults": "未找到匹配的服务器"
     },
     "settings": {
       "title": "设置",

@@ -268,7 +268,15 @@
       "recentServers": "Serveurs récents"
     },
     "servers": {
-      "title": "Gestion des serveurs"
+      "title": "Gestion des serveurs",
+      "semanticSearch": "Recherche intelligente d'outils...",
+      "semanticSearchPlaceholder": "Décrivez la fonctionnalité dont vous avez besoin, par ex. : cartes, météo, traitement de fichiers",
+      "similarityThreshold": "Seuil de similarité",
+      "similarityThresholdHelp": "Des valeurs plus élevées renvoient des résultats plus précis, des valeurs plus faibles des correspondances plus larges",
+      "searchButton": "Rechercher",
+      "clearSearch": "Effacer la recherche",
+      "searchResults": "{{count}} serveur(s) correspondant(s) trouvé(s)",
+      "noSearchResults": "Aucun serveur correspondant trouvé"
     },
     "groups": {
       "title": "Gestion des groupes"
