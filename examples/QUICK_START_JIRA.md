@@ -83,7 +83,7 @@ pnpm dev
 ### Step 6: Verify Connection (30 seconds)
 
 1. Open http://localhost:3000
-2. Login: `admin` / `admin123`
+2. Login: `admin` / `admin123` (**⚠️ Change this password in production!**)
 3. Check dashboard - you should see "jira" server as "Connected" ✅
 
 ## 🎉 That's It!

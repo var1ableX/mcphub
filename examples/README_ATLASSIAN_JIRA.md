@@ -190,6 +190,9 @@ After starting MCPHub:
 
 1. Open `http://localhost:3000` in your browser
 2. Log in with default credentials: `admin` / `admin123`
+   
+   **⚠️ SECURITY WARNING:** Change the default admin password immediately in production! The default password is only for initial setup and testing.
+   
 3. Check the dashboard to see if the Atlassian server is connected
 4. Look for the server status - it should show as "Connected" or "Running"
 5. Check the logs for any connection errors

@@ -22,12 +22,17 @@ Your `mcp_settings.json` should look like this:
   "users": [
     {
       "username": "admin",
-      "password": "$2b$10$Vt7krIvjNgyN67LXqly0uOcTpN0LI55cYRbcKC71pUDAP0nJ7RPa.",
+      "password": "${ADMIN_PASSWORD_HASH}",
       "isAdmin": true
     }
   ]
 }
 ```
+
+**Security Note:** The `password` field should contain a bcrypt hash. For the default admin password (`admin123`), use:
+`$2b$10$Vt7krIvjNgyN67LXqly0uOcTpN0LI55cYRbcKC71pUDAP0nJ7RPa.`
+
+**⚠️ IMPORTANT:** Always change the default admin password in production!
 
 ## 📁 File Structure
 
