@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Example MCP settings showing different connection modes",
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "connectionMode": "persistent",
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "enabled": true
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--headless"],
+      "connectionMode": "persistent",
+      "enabled": true
+    },
+    "pdf-reader": {
+      "command": "npx",
+      "args": ["-y", "pdf-mcp-server"],
+      "connectionMode": "on-demand",
+      "env": {
+        "PDF_CACHE_DIR": "/tmp/pdf-cache"
+      },
+      "enabled": true
+    },
+    "image-processor": {
+      "command": "python",
+      "args": ["-m", "image_mcp_server"],
+      "connectionMode": "on-demand",
+      "env": {
+        "IMAGE_OUTPUT_DIR": "/tmp/images"
+      },
+      "enabled": true
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "enabled": true
+    },
+    "slack": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-slack"],
+      "connectionMode": "persistent",
+      "env": {
+        "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+        "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
+      },
+      "enabled": true
+    }
+  },
+  "users": [
+    {
+      "username": "admin",
+      "password": "$2b$10$Vt7krIvjNgyN67LXqly0uOcTpN0LI55cYRbcKC71pUDAP0nJ7RPa.",
+      "isAdmin": true
+    }
+  ]
+}
