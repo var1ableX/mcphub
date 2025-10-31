@@ -29,10 +29,17 @@ Your `mcp_settings.json` should look like this:
 }
 ```
 
-**Security Note:** The `password` field should contain a bcrypt hash. For the default admin password (`admin123`), use:
-`$2b$10$Vt7krIvjNgyN67LXqly0uOcTpN0LI55cYRbcKC71pUDAP0nJ7RPa.`
+**Security Note:** The `password` field must contain a bcrypt hash, not plain text. 
 
-**⚠️ IMPORTANT:** Always change the default admin password in production!
+**To generate a bcrypt hash:**
+```bash
+node -e "console.log(require('bcrypt').hashSync('your-password', 10))"
+```
+
+**⚠️ CRITICAL SECURITY:** 
+- Never use default credentials in production
+- Always change the admin password before deploying
+- Store password hashes, never plain text passwords
 
 ## 📁 File Structure
 

@@ -179,7 +179,7 @@ docker run --env-file .env.production ...
 
 | Symptom | Likely Cause | Quick Fix |
 |---------|--------------|-----------|
-| "uvx command not found" | UV not installed | Install UV: `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| "uvx command not found" | UV not installed | Install UV: `curl -LsSf https://astral.sh/uv/install.sh | sh` |
 | "401 Unauthorized" | Wrong API token | Regenerate token at Atlassian settings |
 | Server "Disconnected" | Missing env vars | Check `.env` file exists and has values |
 | "Downloading cryptography" errors | Network/Python issue | Wait and retry, check internet connection |

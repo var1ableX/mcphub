@@ -14,6 +14,7 @@
   "users": [
     {
       "username": "admin",
+      "_comment": "Password must be a bcrypt hash. Generate with: node -e \"console.log(require('bcrypt').hashSync('your-password', 10))\"",
       "password": "${ADMIN_PASSWORD_HASH}",
       "isAdmin": true
     }

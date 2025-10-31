@@ -191,7 +191,14 @@ After starting MCPHub:
 1. Open `http://localhost:3000` in your browser
 2. Log in with default credentials: `admin` / `admin123`
    
-   **⚠️ SECURITY WARNING:** Change the default admin password immediately in production! The default password is only for initial setup and testing.
+   **⚠️ SECURITY WARNING:** Change the default admin password immediately in production! 
+   
+   **To change the password:**
+   - Option 1: Use the dashboard after logging in (Settings → Users → Change Password)
+   - Option 2: Generate a bcrypt hash and update `mcp_settings.json`:
+     ```bash
+     node -e "console.log(require('bcrypt').hashSync('your-new-password', 10))"
+     ```
    
 3. Check the dashboard to see if the Atlassian server is connected
 4. Look for the server status - it should show as "Connected" or "Running"
