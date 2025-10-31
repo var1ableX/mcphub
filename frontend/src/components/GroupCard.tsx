@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Group, Server, IGroupServerConfig } from '@/types'
-import { Edit, Trash, Copy, Check, Link, FileCode, DropdownIcon, Wrench } from '@/components/icons/LucideIcons'
+import { Edit, Trash, Copy, Check, Link, FileCode, DropdownIcon, Wrench, Download } from '@/components/icons/LucideIcons'
 import DeleteDialog from '@/components/ui/DeleteDialog'
 import { useToast } from '@/contexts/ToastContext'
 import { useSettingsData } from '@/hooks/useSettingsData'
+import InstallToClientDialog from '@/components/InstallToClientDialog'
 
 interface GroupCardProps {
   group: Group
@@ -26,6 +27,7 @@ const GroupCard = ({
   const [copied, setCopied] = useState(false)
   const [showCopyDropdown, setShowCopyDropdown] = useState(false)
   const [expandedServer, setExpandedServer] = useState<string | null>(null)
+  const [showInstallDialog, setShowInstallDialog] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
@@ -48,6 +50,10 @@ const GroupCard = ({
 
   const handleDelete = () => {
     setShowDeleteDialog(true)
+  }
+
+  const handleInstall = () => {
+    setShowInstallDialog(true)
   }
 
   const handleConfirmDelete = () => {
@@ -184,6 +190,13 @@ const GroupCard = ({
             {t('groups.serverCount', { count: group.servers.length })}
           </div>
           <button
+            onClick={handleInstall}
+            className="text-purple-500 hover:text-purple-700"
+            title={t('install.installButton')}
+          >
+            <Download size={18} />
+          </button>
+          <button
             onClick={handleEdit}
             className="text-gray-500 hover:text-gray-700"
             title={t('groups.edit')}
@@ -277,6 +290,20 @@ const GroupCard = ({
         serverName={group.name}
         isGroup={true}
       />
+      {showInstallDialog && installConfig && (
+        <InstallToClientDialog
+          groupId={group.id}
+          groupName={group.name}
+          config={{
+            type: 'streamable-http',
+            url: `${installConfig.protocol}://${installConfig.baseUrl}${installConfig.basePath}/mcp/${group.id}`,
+            headers: {
+              Authorization: `Bearer ${installConfig.token}`
+            }
+          }}
+          onClose={() => setShowInstallDialog(false)}
+        />
+      )}
     </div>
   )
 }

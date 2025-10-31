@@ -753,5 +753,28 @@
     "internalError": "内部错误",
     "internalErrorMessage": "处理 OAuth 回调时发生意外错误。",
     "closeWindow": "关闭窗口"
+  },
+  "install": {
+    "installServerTitle": "安装服务器到 {{name}}",
+    "installGroupTitle": "安装分组 {{name}}",
+    "configCode": "配置代码",
+    "copyConfig": "复制配置",
+    "steps": "安装步骤",
+    "step1Cursor": "复制上面的配置代码",
+    "step2Cursor": "打开 Cursor，进入设置 > Features > MCP",
+    "step3Cursor": "点击 'Add New MCP Server' 添加新服务器",
+    "step4Cursor": "将配置粘贴到相应位置并重启 Cursor",
+    "step1ClaudeCode": "复制上面的配置代码",
+    "step2ClaudeCode": "打开 Claude Code，进入设置 > Features > MCP",
+    "step3ClaudeCode": "点击 'Add New MCP Server' 添加新服务器",
+    "step4ClaudeCode": "将配置粘贴到相应位置并重启 Claude Code",
+    "step1ClaudeDesktop": "复制上面的配置代码",
+    "step2ClaudeDesktop": "打开 Claude Desktop，进入设置 > Developer",
+    "step3ClaudeDesktop": "点击 'Edit Config' 编辑配置文件",
+    "step4ClaudeDesktop": "将配置粘贴到 mcpServers 部分并重启 Claude Desktop",
+    "installToCursor": "添加 {{name}} MCP 服务器到 Cursor",
+    "installToClaudeCode": "添加 {{name}} MCP 服务器到 Claude Code",
+    "installToClaudeDesktop": "添加 {{name}} MCP 服务器到 Claude Desktop",
+    "installButton": "安装"
   }
 }

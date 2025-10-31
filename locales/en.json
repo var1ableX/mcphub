@@ -751,5 +751,28 @@
     "internalError": "Internal Error",
     "internalErrorMessage": "An unexpected error occurred while processing the OAuth callback.",
     "closeWindow": "Close Window"
+  },
+  "install": {
+    "installServerTitle": "Install Server to {{name}}",
+    "installGroupTitle": "Install Group {{name}}",
+    "configCode": "Configuration Code",
+    "copyConfig": "Copy Configuration",
+    "steps": "Installation Steps",
+    "step1Cursor": "Copy the configuration code above",
+    "step2Cursor": "Open Cursor, go to Settings > Features > MCP",
+    "step3Cursor": "Click 'Add New MCP Server' to add a new server",
+    "step4Cursor": "Paste the configuration in the appropriate location and restart Cursor",
+    "step1ClaudeCode": "Copy the configuration code above",
+    "step2ClaudeCode": "Open Claude Code, go to Settings > Features > MCP",
+    "step3ClaudeCode": "Click 'Add New MCP Server' to add a new server",
+    "step4ClaudeCode": "Paste the configuration in the appropriate location and restart Claude Code",
+    "step1ClaudeDesktop": "Copy the configuration code above",
+    "step2ClaudeDesktop": "Open Claude Desktop, go to Settings > Developer",
+    "step3ClaudeDesktop": "Click 'Edit Config' to edit the configuration file",
+    "step4ClaudeDesktop": "Paste the configuration in the mcpServers section and restart Claude Desktop",
+    "installToCursor": "Add {{name}} MCP server to Cursor",
+    "installToClaudeCode": "Add {{name}} MCP server to Claude Code",
+    "installToClaudeDesktop": "Add {{name}} MCP server to Claude Desktop",
+    "installButton": "Install"
   }
 }

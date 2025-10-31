@@ -17,7 +17,8 @@ import {
   Link,
   FileCode,
   ChevronDown as DropdownIcon,
-  Wrench
+  Wrench,
+  Download
 } from 'lucide-react'
 
 export {
@@ -39,7 +40,8 @@ export {
   Link,
   FileCode,
   DropdownIcon,
-  Wrench
+  Wrench,
+  Download
 }
 
 const LucideIcons = {

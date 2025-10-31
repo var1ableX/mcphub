@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Server } from '@/types';
-import { ChevronDown, ChevronRight, AlertCircle, Copy, Check } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertCircle, Copy, Check, Download } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/Badge';
 import ToolCard from '@/components/ui/ToolCard';
 import PromptCard from '@/components/ui/PromptCard';
 import DeleteDialog from '@/components/ui/DeleteDialog';
 import { useToast } from '@/contexts/ToastContext';
 import { useSettingsData } from '@/hooks/useSettingsData';
+import InstallToClientDialog from '@/components/InstallToClientDialog';
 
 interface ServerCardProps {
   server: Server;
@@ -25,6 +26,7 @@ const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCar
   const [isToggling, setIsToggling] = useState(false);
   const [showErrorPopover, setShowErrorPopover] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showInstallDialog, setShowInstallDialog] = useState(false);
   const errorPopoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,6 +52,11 @@ const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCar
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEdit(server);
+  };
+
+  const handleInstall = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowInstallDialog(true);
   };
 
   const handleToggle = async (e: React.MouseEvent) => {
@@ -311,6 +318,13 @@ const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCar
               {t('server.copy')}
             </button>
             <button
+              onClick={handleInstall}
+              className="px-3 py-1 bg-purple-100 text-purple-800 rounded hover:bg-purple-200 text-sm btn-primary flex items-center space-x-1"
+            >
+              <Download size={14} />
+              <span>{t('install.installButton')}</span>
+            </button>
+            <button
               onClick={handleEdit}
               className="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 text-sm btn-primary"
             >
@@ -398,6 +412,13 @@ const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCar
         onConfirm={handleConfirmDelete}
         serverName={server.name}
       />
+      {showInstallDialog && server.config && (
+        <InstallToClientDialog
+          serverName={server.name}
+          config={server.config}
+          onClose={() => setShowInstallDialog(false)}
+        />
+      )}
     </>
   );
 };

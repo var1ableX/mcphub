@@ -751,5 +751,28 @@
     "internalError": "Erreur interne",
     "internalErrorMessage": "Une erreur inattendue s'est produite lors du traitement du callback OAuth.",
     "closeWindow": "Fermer la fenêtre"
+  },
+  "install": {
+    "installServerTitle": "Installer le serveur sur {{name}}",
+    "installGroupTitle": "Installer le groupe {{name}}",
+    "configCode": "Code de configuration",
+    "copyConfig": "Copier la configuration",
+    "steps": "Étapes d'installation",
+    "step1Cursor": "Copiez le code de configuration ci-dessus",
+    "step2Cursor": "Ouvrez Cursor, allez dans Paramètres > Features > MCP",
+    "step3Cursor": "Cliquez sur 'Add New MCP Server' pour ajouter un nouveau serveur",
+    "step4Cursor": "Collez la configuration à l'emplacement approprié et redémarrez Cursor",
+    "step1ClaudeCode": "Copiez le code de configuration ci-dessus",
+    "step2ClaudeCode": "Ouvrez Claude Code, allez dans Paramètres > Features > MCP",
+    "step3ClaudeCode": "Cliquez sur 'Add New MCP Server' pour ajouter un nouveau serveur",
+    "step4ClaudeCode": "Collez la configuration à l'emplacement approprié et redémarrez Claude Code",
+    "step1ClaudeDesktop": "Copiez le code de configuration ci-dessus",
+    "step2ClaudeDesktop": "Ouvrez Claude Desktop, allez dans Paramètres > Développeur",
+    "step3ClaudeDesktop": "Cliquez sur 'Edit Config' pour modifier le fichier de configuration",
+    "step4ClaudeDesktop": "Collez la configuration dans la section mcpServers et redémarrez Claude Desktop",
+    "installToCursor": "Ajouter le serveur MCP {{name}} à Cursor",
+    "installToClaudeCode": "Ajouter le serveur MCP {{name}} à Claude Code",
+    "installToClaudeDesktop": "Ajouter le serveur MCP {{name}} à Claude Desktop",
+    "installButton": "Installer"
   }
 }
