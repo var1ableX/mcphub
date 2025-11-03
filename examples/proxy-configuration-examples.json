@@ -1,0 +1,142 @@
+{
+  "// NOTE": "This file demonstrates various proxy configuration patterns for MCPHub",
+  "// DOCS": "For complete documentation, see docs/configuration/proxy-support.mdx",
+  
+  "mcpServers": {
+    "// Example 1": "Basic proxy configuration with static values",
+    "npm-server-with-proxy": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--headless"],
+      "env": {
+        "HTTP_PROXY": "http://proxy.example.com:8080",
+        "HTTPS_PROXY": "http://proxy.example.com:8080",
+        "NO_PROXY": "localhost,127.0.0.1,.local"
+      }
+    },
+
+    "// Example 2": "Proxy configuration using environment variables",
+    "python-server-with-proxy": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "env": {
+        "HTTP_PROXY": "${COMPANY_HTTP_PROXY}",
+        "HTTPS_PROXY": "${COMPANY_HTTPS_PROXY}",
+        "NO_PROXY": "${COMPANY_NO_PROXY}"
+      }
+    },
+
+    "// Example 3": "Proxy with authentication",
+    "authenticated-proxy-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-slack"],
+      "env": {
+        "HTTP_PROXY": "http://username:password@proxy.example.com:8080",
+        "HTTPS_PROXY": "http://username:password@proxy.example.com:8080",
+        "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}"
+      }
+    },
+
+    "// Example 4": "Proxy credentials from environment variables (more secure)",
+    "secure-proxy-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "my-mcp-server"],
+      "env": {
+        "HTTP_PROXY": "${AUTHENTICATED_PROXY_URL}",
+        "HTTPS_PROXY": "${AUTHENTICATED_PROXY_URL}"
+      }
+    },
+
+    "// Example 5": "Different proxy for different servers",
+    "external-api-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@external/api-server"],
+      "env": {
+        "HTTP_PROXY": "http://external-proxy.example.com:8080",
+        "HTTPS_PROXY": "http://external-proxy.example.com:8080"
+      }
+    },
+
+    "// Example 6": "No proxy for internal servers",
+    "internal-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@internal/mcp-server"],
+      "env": {
+        "NO_PROXY": "*"
+      }
+    },
+
+    "// Example 7": "Corporate proxy with comprehensive NO_PROXY list",
+    "corporate-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@company/mcp-server"],
+      "env": {
+        "HTTP_PROXY": "http://proxy.corp.com:8080",
+        "HTTPS_PROXY": "http://proxy.corp.com:8080",
+        "NO_PROXY": "localhost,127.0.0.1,*.corp.com,.internal,10.0.0.0/8"
+      }
+    },
+
+    "// Example 8": "Mixed proxy and API key configuration",
+    "api-server-with-proxy": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-example", "--api-key", "${API_KEY}"],
+      "env": {
+        "HTTP_PROXY": "${PROXY_URL}",
+        "HTTPS_PROXY": "${PROXY_URL}",
+        "NO_PROXY": "localhost,127.0.0.1",
+        "API_KEY": "${MY_API_KEY}",
+        "DEBUG": "false"
+      }
+    },
+
+    "// Example 9": "Proxy for package installation only (NPM)",
+    "npm-custom-registry": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "my-package"],
+      "env": {
+        "HTTP_PROXY": "http://proxy.example.com:8080",
+        "HTTPS_PROXY": "http://proxy.example.com:8080"
+      }
+    },
+
+    "// Example 10": "Proxy for Python package installation",
+    "python-custom-index": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "env": {
+        "HTTP_PROXY": "http://proxy.example.com:8080",
+        "HTTPS_PROXY": "http://proxy.example.com:8080"
+      }
+    }
+  },
+
+  "// IMPORTANT": "Remember to set the following environment variables before starting MCPHub:",
+  "// Required env vars": [
+    "COMPANY_HTTP_PROXY=http://proxy.company.com:8080",
+    "COMPANY_HTTPS_PROXY=http://proxy.company.com:8080",
+    "COMPANY_NO_PROXY=localhost,127.0.0.1,*.company.com,.internal",
+    "AUTHENTICATED_PROXY_URL=http://user:pass@secure-proxy.com:3128",
+    "PROXY_URL=http://proxy.example.com:8080",
+    "MY_API_KEY=your-api-key-here",
+    "SLACK_BOT_TOKEN=your-slack-bot-token",
+    "API_KEY=your-api-key"
+  ],
+
+  "users": [
+    {
+      "username": "admin",
+      "password": "$2b$10$Vt7krIvjNgyN67LXqly0uOcTpN0LI55cYRbcKC71pUDAP0nJ7RPa.",
+      "isAdmin": true
+    }
+  ]
+}
