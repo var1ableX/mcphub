@@ -31,6 +31,31 @@
         "DATABASE_URL": "${DATABASE_URL}"
       }
     },
+    "example-stdio-server-with-proxy": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-example"
+      ],
+      "env": {
+        "HTTP_PROXY": "${HTTP_PROXY}",
+        "HTTPS_PROXY": "${HTTPS_PROXY}",
+        "NO_PROXY": "${NO_PROXY}"
+      }
+    },
+    "example-python-server-with-proxy": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "env": {
+        "HTTP_PROXY": "http://proxy.example.com:8080",
+        "HTTPS_PROXY": "http://proxy.example.com:8080",
+        "NO_PROXY": "localhost,127.0.0.1,.local"
+      }
+    },
     "example-openapi-server": {
       "type": "openapi",
       "openapi": {

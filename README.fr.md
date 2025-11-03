@@ -19,6 +19,7 @@ MCPHub facilite la gestion et la mise à l'échelle de plusieurs serveurs MCP (M
 - **Configuration à chaud** : Ajoutez, supprimez ou mettez à jour les serveurs MCP à la volée, sans temps d'arrêt.
 - **Contrôle d'accès basé sur les groupes** : Organisez les serveurs en groupes personnalisables pour une gestion simplifiée des autorisations.
 - **Authentification sécurisée** : Gestion des utilisateurs intégrée avec contrôle d'accès basé sur les rôles, optimisée par JWT et bcrypt.
+- **Support de proxy** : Configurez des proxys HTTP/HTTPS pour les serveurs MCP qui doivent accéder à des ressources externes. Voir le [Guide de support proxy](docs/configuration/proxy-support.mdx).
 - **Prêt pour Docker** : Déployez instantanément avec notre configuration conteneurisée.
 
 ## 🔧 Démarrage rapide

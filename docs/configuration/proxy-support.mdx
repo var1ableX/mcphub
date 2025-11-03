@@ -1,0 +1,368 @@
+# Proxy Support for MCP Servers
+
+## Overview
+
+MCPHub supports configuring proxy servers for MCP servers that need to access external resources through a proxy. This is particularly useful when:
+
+- Your MCP servers need to install packages from external repositories
+- Your network environment requires proxy for internet access
+- You need to route MCP server traffic through a specific proxy
+
+## How It Works
+
+For **stdio-based MCP servers** (servers that spawn child processes), MCPHub automatically passes environment variables to the spawned process. This includes standard proxy environment variables:
+
+- `HTTP_PROXY` / `http_proxy` - Proxy server for HTTP connections
+- `HTTPS_PROXY` / `https_proxy` - Proxy server for HTTPS connections
+- `NO_PROXY` / `no_proxy` - Comma-separated list of hosts that should bypass the proxy
+
+## Configuration Methods
+
+### Method 1: System-wide Environment Variables
+
+Set proxy environment variables before starting MCPHub. These will be inherited by all MCP servers:
+
+```bash
+# Linux/macOS
+export HTTP_PROXY="http://proxy.example.com:8080"
+export HTTPS_PROXY="http://proxy.example.com:8080"
+export NO_PROXY="localhost,127.0.0.1,.local"
+
+# Start MCPHub
+npm start
+```
+
+```powershell
+# Windows PowerShell
+$env:HTTP_PROXY="http://proxy.example.com:8080"
+$env:HTTPS_PROXY="http://proxy.example.com:8080"
+$env:NO_PROXY="localhost,127.0.0.1,.local"
+
+# Start MCPHub
+npm start
+```
+
+### Method 2: Per-Server Configuration
+
+Configure proxy settings for specific MCP servers in `mcp_settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-example"],
+      "env": {
+        "HTTP_PROXY": "http://proxy.example.com:8080",
+        "HTTPS_PROXY": "http://proxy.example.com:8080",
+        "NO_PROXY": "localhost,127.0.0.1"
+      }
+    }
+  }
+}
+```
+
+### Method 3: Using Environment Variable References
+
+Combine per-server configuration with environment variable references for flexibility:
+
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "env": {
+        "HTTP_PROXY": "${COMPANY_HTTP_PROXY}",
+        "HTTPS_PROXY": "${COMPANY_HTTPS_PROXY}",
+        "NO_PROXY": "${COMPANY_NO_PROXY}"
+      }
+    }
+  }
+}
+```
+
+Then set the environment variables:
+
+```bash
+export COMPANY_HTTP_PROXY="http://proxy.example.com:8080"
+export COMPANY_HTTPS_PROXY="http://proxy.example.com:8080"
+export COMPANY_NO_PROXY="localhost,127.0.0.1,.local"
+```
+
+## Docker Usage
+
+### Method 1: Docker Environment Variables
+
+Pass proxy settings when running MCPHub container:
+
+```bash
+docker run \
+  -e HTTP_PROXY="http://proxy.example.com:8080" \
+  -e HTTPS_PROXY="http://proxy.example.com:8080" \
+  -e NO_PROXY="localhost,127.0.0.1" \
+  -v $(pwd)/mcp_settings.json:/app/mcp_settings.json \
+  samanhappy/mcphub:latest
+```
+
+### Method 2: Docker Compose
+
+Configure proxy in `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+services:
+  mcphub:
+    image: samanhappy/mcphub:latest
+    environment:
+      - HTTP_PROXY=http://proxy.example.com:8080
+      - HTTPS_PROXY=http://proxy.example.com:8080
+      - NO_PROXY=localhost,127.0.0.1,.local
+    volumes:
+      - ./mcp_settings.json:/app/mcp_settings.json
+```
+
+### Method 3: Docker Environment File
+
+Create a `.env` file:
+
+```bash
+# .env
+HTTP_PROXY=http://proxy.example.com:8080
+HTTPS_PROXY=http://proxy.example.com:8080
+NO_PROXY=localhost,127.0.0.1,.local
+```
+
+Use it with Docker:
+
+```bash
+docker run --env-file .env -v $(pwd)/mcp_settings.json:/app/mcp_settings.json samanhappy/mcphub:latest
+```
+
+Or with docker-compose.yml:
+
+```yaml
+version: '3.8'
+services:
+  mcphub:
+    image: samanhappy/mcphub:latest
+    env_file:
+      - .env
+    volumes:
+      - ./mcp_settings.json:/app/mcp_settings.json
+```
+
+## Examples
+
+### Example 1: NPM Packages with Proxy
+
+Configure an MCP server that uses NPM packages through a proxy:
+
+```json
+{
+  "mcpServers": {
+    "playwright-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--headless"],
+      "env": {
+        "HTTP_PROXY": "http://proxy.company.com:8080",
+        "HTTPS_PROXY": "http://proxy.company.com:8080",
+        "NO_PROXY": "localhost,127.0.0.1,.company.com"
+      }
+    }
+  }
+}
+```
+
+### Example 2: Python UVX with Proxy
+
+Configure a Python-based MCP server that needs proxy for package installation:
+
+```json
+{
+  "mcpServers": {
+    "fetch-server": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "env": {
+        "HTTP_PROXY": "http://proxy.company.com:8080",
+        "HTTPS_PROXY": "http://proxy.company.com:8080",
+        "NO_PROXY": "localhost,127.0.0.1,*.internal"
+      }
+    }
+  }
+}
+```
+
+### Example 3: Mixed Configuration
+
+Some servers use proxy, others don't:
+
+```json
+{
+  "mcpServers": {
+    "external-api": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@external/mcp-server"],
+      "env": {
+        "HTTP_PROXY": "${EXTERNAL_PROXY}",
+        "HTTPS_PROXY": "${EXTERNAL_PROXY}"
+      }
+    },
+    "internal-service": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@internal/mcp-server"],
+      "env": {
+        "NO_PROXY": "*"
+      }
+    }
+  }
+}
+```
+
+## Proxy Authentication
+
+If your proxy requires authentication, include credentials in the proxy URL:
+
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "my-mcp-server"],
+      "env": {
+        "HTTP_PROXY": "http://username:password@proxy.example.com:8080",
+        "HTTPS_PROXY": "http://username:password@proxy.example.com:8080"
+      }
+    }
+  }
+}
+```
+
+**Security Note**: For better security, use environment variable references to avoid storing credentials in configuration files:
+
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "my-mcp-server"],
+      "env": {
+        "HTTP_PROXY": "${PROXY_URL_WITH_CREDENTIALS}"
+      }
+    }
+  }
+}
+```
+
+Then set the environment variable:
+
+```bash
+export PROXY_URL_WITH_CREDENTIALS="http://username:password@proxy.example.com:8080"
+```
+
+## Troubleshooting
+
+### Proxy Not Working
+
+1. **Verify proxy configuration**:
+   ```bash
+   echo $HTTP_PROXY
+   echo $HTTPS_PROXY
+   ```
+
+2. **Check proxy connectivity**:
+   ```bash
+   curl -x http://proxy.example.com:8080 https://www.google.com
+   ```
+
+3. **Test with a simple command**:
+   ```bash
+   HTTP_PROXY=http://proxy.example.com:8080 curl https://api.github.com
+   ```
+
+4. **Check MCP server logs**:
+   - Look for connection errors in MCPHub console output
+   - Check if the MCP server reports proxy-related errors
+
+### Certificate Issues
+
+If using HTTPS proxy with self-signed certificates:
+
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "my-mcp-server"],
+      "env": {
+        "HTTPS_PROXY": "http://proxy.example.com:8080",
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+      }
+    }
+  }
+}
+```
+
+**Warning**: Disabling certificate validation (`NODE_TLS_REJECT_UNAUTHORIZED=0`) should only be used in development or trusted networks.
+
+### Proxy for Package Installation Only
+
+If you only need proxy for package installation (not runtime):
+
+For NPM:
+```bash
+npm config set proxy http://proxy.example.com:8080
+npm config set https-proxy http://proxy.example.com:8080
+```
+
+For Python/UV:
+```bash
+export UV_HTTP_PROXY=http://proxy.example.com:8080
+```
+
+## Limitations
+
+### SSE and HTTP-based MCP Servers
+
+The proxy configuration described here applies to **stdio-based MCP servers** (servers that spawn child processes).
+
+For **SSE** or **HTTP-based** MCP servers, MCPHub itself acts as the HTTP client. In these cases:
+
+1. Set proxy environment variables for the MCPHub process (not in `mcp_settings.json`)
+2. The Node.js HTTP client will automatically use these proxy settings
+
+Example for SSE servers:
+
+```bash
+# Set proxy for MCPHub process
+export HTTP_PROXY="http://proxy.example.com:8080"
+export HTTPS_PROXY="http://proxy.example.com:8080"
+
+# Start MCPHub - it will use these settings for SSE/HTTP connections
+npm start
+```
+
+## Best Practices
+
+1. **Use environment variables** for proxy credentials to avoid storing them in configuration files
+2. **Configure NO_PROXY** to exclude internal services and localhost
+3. **Test proxy configuration** before deploying to production
+4. **Document proxy requirements** for your deployment environment
+5. **Use separate proxy configurations** for different MCP servers when needed
+6. **Monitor proxy logs** for connection issues and performance
+
+## Related Documentation
+
+- [Environment Variables](../environment-variables.md) - Learn about environment variable expansion
+- [Docker Setup](./docker-setup.mdx) - Docker-specific configuration
+- [MCP Settings](./mcp-settings.mdx) - Complete configuration reference
