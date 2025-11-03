@@ -1,9 +1,9 @@
 {
-  "// NOTE": "This file demonstrates various proxy configuration patterns for MCPHub",
-  "// DOCS": "For complete documentation, see docs/configuration/proxy-support.mdx",
+  "_note": "This file demonstrates various proxy configuration patterns for MCPHub",
+  "_documentation": "For complete documentation, see docs/configuration/proxy-support.mdx",
   
   "mcpServers": {
-    "// Example 1": "Basic proxy configuration with static values",
+    "_example1": "Basic proxy configuration with static values",
     "npm-server-with-proxy": {
       "type": "stdio",
       "command": "npx",
@@ -15,7 +15,7 @@
       }
     },
 
-    "// Example 2": "Proxy configuration using environment variables",
+    "_example2": "Proxy configuration using environment variables",
     "python-server-with-proxy": {
       "type": "stdio",
       "command": "uvx",
@@ -27,7 +27,7 @@
       }
     },
 
-    "// Example 3": "Proxy with authentication",
+    "_example3": "Proxy with authentication",
     "authenticated-proxy-server": {
       "type": "stdio",
       "command": "npx",
@@ -39,7 +39,7 @@
       }
     },
 
-    "// Example 4": "Proxy credentials from environment variables (more secure)",
+    "_example4": "Proxy credentials from environment variables (more secure)",
     "secure-proxy-server": {
       "type": "stdio",
       "command": "npx",
@@ -50,7 +50,7 @@
       }
     },
 
-    "// Example 5": "Different proxy for different servers",
+    "_example5": "Different proxy for different servers",
     "external-api-server": {
       "type": "stdio",
       "command": "npx",
@@ -61,7 +61,7 @@
       }
     },
 
-    "// Example 6": "No proxy for internal servers",
+    "_example6": "No proxy for internal servers",
     "internal-server": {
       "type": "stdio",
       "command": "npx",
@@ -71,7 +71,7 @@
       }
     },
 
-    "// Example 7": "Corporate proxy with comprehensive NO_PROXY list",
+    "_example7": "Corporate proxy with comprehensive NO_PROXY list",
     "corporate-server": {
       "type": "stdio",
       "command": "npx",
@@ -83,7 +83,7 @@
       }
     },
 
-    "// Example 8": "Mixed proxy and API key configuration",
+    "_example8": "Mixed proxy and API key configuration",
     "api-server-with-proxy": {
       "type": "stdio",
       "command": "uvx",
@@ -97,7 +97,7 @@
       }
     },
 
-    "// Example 9": "Proxy for package installation only (NPM)",
+    "_example9": "Proxy for package installation only (NPM)",
     "npm-custom-registry": {
       "type": "stdio",
       "command": "npx",
@@ -108,7 +108,7 @@
       }
     },
 
-    "// Example 10": "Proxy for Python package installation",
+    "_example10": "Proxy for Python package installation",
     "python-custom-index": {
       "type": "stdio",
       "command": "uvx",
@@ -120,8 +120,8 @@
     }
   },
 
-  "// IMPORTANT": "Remember to set the following environment variables before starting MCPHub:",
-  "// Required env vars": [
+  "_important": "Remember to set the following environment variables before starting MCPHub",
+  "_required_env_vars": [
     "COMPANY_HTTP_PROXY=http://proxy.company.com:8080",
     "COMPANY_HTTPS_PROXY=http://proxy.company.com:8080",
     "COMPANY_NO_PROXY=localhost,127.0.0.1,*.company.com,.internal",
