@@ -8,10 +8,19 @@ import { DataService } from '../services/dataService.js';
 
 dotenv.config();
 
+/**
+ * Normalize the base path by removing trailing slashes
+ */
+const normalizeBasePath = (path: string): string => {
+  if (!path) return '';
+  // Remove trailing slashes
+  return path.replace(/\/+$/, '');
+};
+
 const defaultConfig = {
   port: process.env.PORT || 3000,
   initTimeout: process.env.INIT_TIMEOUT || 300000,
-  basePath: process.env.BASE_PATH || '',
+  basePath: normalizeBasePath(process.env.BASE_PATH || ''),
   readonly: 'true' === process.env.READONLY || false,
   mcpHubName: 'mcphub',
   mcpHubVersion: getPackageVersion(),
