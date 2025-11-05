@@ -77,9 +77,6 @@ describe('AppServer with BASE_PATH configuration', () => {
     // Test that /mcphub/public-config endpoint exists
     const publicConfigResponse = await request(app).get('/mcphub/public-config');
     expect(publicConfigResponse.status).not.toBe(404);
-    
-    // Clean up
-    delete process.env.BASE_PATH;
   });
 
   it('should serve auth routes without BASE_PATH (default)', async () => {
@@ -109,7 +106,7 @@ describe('AppServer with BASE_PATH configuration', () => {
     expect(publicConfigResponse.status).not.toBe(404);
   });
 
-  it('should correctly mount API routes with BASE_PATH', async () => {
+  it('should serve global endpoints without BASE_PATH prefix', async () => {
     process.env.BASE_PATH = '/test-base/';
     
     jest.resetModules();
@@ -121,11 +118,13 @@ describe('AppServer with BASE_PATH configuration', () => {
     
     const app = appServer.getApp();
     
-    // Test that API routes are accessible with base path
-    const apiHealthResponse = await request(app).get('/health');
-    expect(apiHealthResponse.status).not.toBe(404);
+    // Test that /health endpoint is accessible globally (no BASE_PATH prefix)
+    // The /health endpoint is intentionally mounted without BASE_PATH
+    const healthResponse = await request(app).get('/health');
+    expect(healthResponse.status).not.toBe(404);
     
-    // Clean up
-    delete process.env.BASE_PATH;
+    // Also verify that BASE_PATH prefixed routes exist
+    const configResponse = await request(app).get('/test-base/config');
+    expect(configResponse.status).not.toBe(404);
   });
 });
