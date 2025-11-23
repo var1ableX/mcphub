@@ -22,21 +22,23 @@ jest.mock('../config/index.js', () => {
   const config = {
     basePath: '/test',
   };
+  const mockSettings = {
+    mcpServers: {},
+    systemConfig: {
+      routing: {
+        enableGlobalRoute: true,
+        enableGroupNameRoute: true,
+        enableBearerAuth: false,
+        bearerAuthKey: 'test-key',
+      },
+      enableSessionRebuild: false, // Default to false for tests
+    },
+  };
   return {
     __esModule: true,
     default: config,
-    loadSettings: jest.fn(() => ({
-      mcpServers: {},
-      systemConfig: {
-        routing: {
-          enableGlobalRoute: true,
-          enableGroupNameRoute: true,
-          enableBearerAuth: false,
-          bearerAuthKey: 'test-key',
-        },
-        enableSessionRebuild: false, // Default to false for tests
-      },
-    })),
+    loadSettings: jest.fn(() => mockSettings),
+    loadOriginalSettings: jest.fn(() => mockSettings),
   };
 });
 
@@ -66,7 +68,7 @@ jest.mock('@modelcontextprotocol/sdk/types.js', () => ({
 
 // Import mocked modules
 import { getMcpServer } from './mcpService.js';
-import { loadSettings } from '../config/index.js';
+import { loadSettings, loadOriginalSettings } from '../config/index.js';
 import { UserContextService } from './userContextService.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -152,12 +154,19 @@ const expectBearerUnauthorized = (
   );
 };
 
+const setMockSettings = (settings: any): void => {
+  (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue(settings);
+  (loadOriginalSettings as jest.MockedFunction<typeof loadOriginalSettings>).mockReturnValue(
+    settings,
+  );
+};
+
 describe('sseService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
     // Reset settings cache
-    (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue({
+    const mockSettingsValue = {
       mcpServers: {},
       systemConfig: {
         routing: {
@@ -168,7 +177,11 @@ describe('sseService', () => {
         },
         enableSessionRebuild: false, // Default to false for tests
       },
-    });
+    };
+    setMockSettings(mockSettingsValue);
+    (loadOriginalSettings as jest.MockedFunction<typeof loadOriginalSettings>).mockReturnValue(
+      mockSettingsValue,
+    );
   });
 
   describe('bearer authentication', () => {
@@ -185,7 +198,7 @@ describe('sseService', () => {
     });
 
     it('should return 401 when bearer auth is enabled but no authorization header', async () => {
-      (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue({
+      const mockSettingsValue = {
         mcpServers: {},
         systemConfig: {
           routing: {
@@ -195,7 +208,11 @@ describe('sseService', () => {
             bearerAuthKey: 'test-key',
           },
         },
-      });
+      };
+      setMockSettings(mockSettingsValue);
+      (loadOriginalSettings as jest.MockedFunction<typeof loadOriginalSettings>).mockReturnValue(
+        mockSettingsValue,
+      );
 
       const req = createMockRequest();
       const res = createMockResponse();
@@ -206,7 +223,7 @@ describe('sseService', () => {
     });
 
     it('should return 401 when bearer auth is enabled with invalid token', async () => {
-      (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue({
+      setMockSettings({
         mcpServers: {},
         systemConfig: {
           routing: {
@@ -229,7 +246,7 @@ describe('sseService', () => {
     });
 
     it('should pass when bearer auth is enabled with valid token', async () => {
-      (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue({
+      setMockSettings({
         mcpServers: {},
         systemConfig: {
           routing: {
@@ -279,7 +296,7 @@ describe('sseService', () => {
 
   describe('handleSseConnection', () => {
     it('should reject global routes when disabled', async () => {
-      (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue({
+      setMockSettings({
         mcpServers: {},
         systemConfig: {
           routing: {
@@ -375,7 +392,7 @@ describe('sseService', () => {
     });
 
     it('should return 401 when bearer auth fails', async () => {
-      (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue({
+      setMockSettings({
         mcpServers: {},
         systemConfig: {
           routing: {
@@ -400,7 +417,7 @@ describe('sseService', () => {
 
   describe('handleMcpPostRequest', () => {
     it('should reject global routes when disabled', async () => {
-      (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue({
+      setMockSettings({
         mcpServers: {},
         systemConfig: {
           routing: {
@@ -463,7 +480,7 @@ describe('sseService', () => {
 
     it('should transparently rebuild invalid session when enabled', async () => {
       // Enable session rebuild for this test
-      (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue({
+      setMockSettings({
         mcpServers: {},
         systemConfig: {
           routing: {
@@ -492,7 +509,7 @@ describe('sseService', () => {
     });
 
     it('should return 401 when bearer auth fails', async () => {
-      (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue({
+      setMockSettings({
         mcpServers: {},
         systemConfig: {
           routing: {
@@ -533,7 +550,7 @@ describe('sseService', () => {
       Object.keys(transports).forEach(key => delete transports[key]);
       
       // Enable bearer auth for this test
-      (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue({
+      setMockSettings({
         mcpServers: {},
         systemConfig: {
           routing: {
@@ -570,7 +587,7 @@ describe('sseService', () => {
 
     it('should transparently rebuild invalid session in handleMcpOtherRequest when enabled', async () => {
       // Enable bearer auth and session rebuild for this test
-      (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue({
+      setMockSettings({
         mcpServers: {},
         systemConfig: {
           routing: {
@@ -602,7 +619,7 @@ describe('sseService', () => {
     });
 
     it('should return 401 when bearer auth fails', async () => {
-      (loadSettings as jest.MockedFunction<typeof loadSettings>).mockReturnValue({
+      setMockSettings({
         mcpServers: {},
         systemConfig: {
           routing: {

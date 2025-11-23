@@ -5,7 +5,7 @@ import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { deleteMcpServer, getMcpServer } from './mcpService.js';
-import { loadSettings } from '../config/index.js';
+import { loadSettings, loadOriginalSettings } from '../config/index.js';
 import config from '../config/index.js';
 import { UserContextService } from './userContextService.js';
 import { RequestContextService } from './requestContextService.js';
@@ -31,7 +31,8 @@ type BearerAuthResult =
     };
 
 const validateBearerAuth = (req: Request): BearerAuthResult => {
-  const settings = loadSettings();
+  // Use original settings to get the actual systemConfig, not filtered by user context
+  const settings = loadOriginalSettings();
   const routingConfig = settings.systemConfig?.routing || {
     enableGlobalRoute: true,
     enableGroupNameRoute: true,

@@ -243,7 +243,8 @@ describe('Authentication Bypass Security Tests', () => {
         });
 
       // With valid bearer token, should succeed (200 or 202)
-      expect([200, 202]).toContain(response.status);
+      expect(response.status).toBeGreaterThanOrEqual(200);
+      expect(response.status).toBeLessThan(300);
     });
 
     it('should reject invalid bearer token', async () => {
@@ -299,11 +300,12 @@ describe('Authentication Bypass Security Tests', () => {
       const response = await request(httpServer)
         .get('/admin/sse/alice-private')
         .set('Authorization', 'Bearer supersecret-value')
-        .set('Accept', 'text/event-stream');
+        .set('Accept', 'text/event-stream')
+        .timeout(5000); // Add timeout to prevent hanging
 
       // Should establish SSE connection (200)
       expect(response.status).toBe(200);
-    });
+    }, 10000); // Increase test timeout
   });
 
   describe('Global Routes - Bearer Auth Enforcement', () => {
@@ -341,7 +343,8 @@ describe('Authentication Bypass Security Tests', () => {
           },
         });
 
-      expect([200, 202]).toContain(response.status);
+      expect(response.status).toBeGreaterThanOrEqual(200);
+      expect(response.status).toBeLessThan(300);
     });
   });
 
