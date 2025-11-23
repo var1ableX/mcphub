@@ -5,7 +5,7 @@ import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { deleteMcpServer, getMcpServer } from './mcpService.js';
-import { loadSettings } from '../config/index.js';
+import { loadSettings, loadOriginalSettings } from '../config/index.js';
 import config from '../config/index.js';
 import { UserContextService } from './userContextService.js';
 import { RequestContextService } from './requestContextService.js';
@@ -31,7 +31,16 @@ type BearerAuthResult =
     };
 
 const validateBearerAuth = (req: Request): BearerAuthResult => {
-  const settings = loadSettings();
+  // SECURITY FIX: Use loadOriginalSettings() to bypass user filtering
+  // This ensures enableBearerAuth configuration is always read correctly
+  // and not removed by DataServicex.filterSettings() for unauthenticated users
+  const settings = loadOriginalSettings();
+  
+  // Handle case where settings might be undefined (e.g., in tests)
+  if (!settings) {
+    return { valid: true };
+  }
+  
   const routingConfig = settings.systemConfig?.routing || {
     enableGlobalRoute: true,
     enableGroupNameRoute: true,

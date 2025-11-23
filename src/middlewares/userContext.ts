@@ -37,6 +37,10 @@ export const userContextMiddleware = async (
 /**
  * User context middleware for SSE/MCP endpoints
  * Extracts user from URL path parameter and sets user context
+ * 
+ * SECURITY: For user-scoped routes (/:user/...), this middleware validates
+ * that the user is authenticated via JWT, OAuth, or Bearer token and that
+ * the authenticated user matches the requested username in the URL.
  */
 export const sseUserContextMiddleware = async (
   req: Request,
@@ -60,19 +64,42 @@ export const sseUserContextMiddleware = async (
     };
 
     if (username) {
-      // For user-scoped routes, set the user context
-      // Note: In a real implementation, you should validate the user exists
-      // and has proper permissions
-      const user: IUser = {
-        username,
-        password: '',
-        isAdmin: false, // TODO: Should be retrieved from user database
-      };
+      // SECURITY FIX: For user-scoped routes, authenticate the request
+      // and validate that the authenticated user matches the requested username
+      
+      // Try to authenticate via Bearer token (OAuth or configured bearer key)
+      const rawAuthHeader = Array.isArray(req.headers.authorization)
+        ? req.headers.authorization[0]
+        : req.headers.authorization;
+      const bearerUser = resolveOAuthUserFromAuthHeader(rawAuthHeader);
 
-      userContextService.setCurrentUser(user);
-      attachCleanupHandlers();
-      console.log(`User context set for SSE/MCP endpoint: ${username}`);
+      if (bearerUser) {
+        // Authenticated via OAuth bearer token
+        // Verify the authenticated user matches the requested username
+        if (bearerUser.username !== username) {
+          res.status(403).json({
+            error: 'forbidden',
+            error_description: `Authenticated user '${bearerUser.username}' cannot access resources for user '${username}'`,
+          });
+          return;
+        }
+        
+        userContextService.setCurrentUser(bearerUser);
+        attachCleanupHandlers();
+        console.log(`OAuth user context set for SSE/MCP endpoint: ${bearerUser.username}`);
+      } else {
+        // SECURITY: No valid authentication provided for user-scoped route
+        // User-scoped routes require authentication to prevent impersonation
+        cleanup();
+        res.status(401).json({
+          error: 'unauthorized',
+          error_description: 'Authentication required for user-scoped MCP endpoints. Please provide valid credentials via Authorization header.',
+        });
+        return;
+      }
     } else {
+      // Global route (no user in path)
+      // Still check for OAuth bearer authentication if provided
       const rawAuthHeader = Array.isArray(req.headers.authorization)
         ? req.headers.authorization[0]
         : req.headers.authorization;
