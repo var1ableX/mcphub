@@ -88,7 +88,9 @@ export async function migrateToDatabase(): Promise<boolean> {
             id: group.id,
             name: group.name,
             description: group.description,
-            servers: group.servers as any,
+            servers: Array.isArray(group.servers) 
+              ? group.servers 
+              : [],
             owner: group.owner,
           });
           console.log(`  - Created group: ${group.name}`);
@@ -101,7 +103,17 @@ export async function migrateToDatabase(): Promise<boolean> {
     // Migrate system config
     if (settings.systemConfig) {
       console.log('Migrating system configuration...');
-      await systemConfigRepo.update(settings.systemConfig as any);
+      const systemConfig = {
+        routing: settings.systemConfig.routing || {},
+        install: settings.systemConfig.install || {},
+        smartRouting: settings.systemConfig.smartRouting || {},
+        mcpRouter: settings.systemConfig.mcpRouter || {},
+        nameSeparator: settings.systemConfig.nameSeparator,
+        oauth: settings.systemConfig.oauth || {},
+        oauthServer: settings.systemConfig.oauthServer || {},
+        enableSessionRebuild: settings.systemConfig.enableSessionRebuild,
+      };
+      await systemConfigRepo.update(systemConfig);
       console.log('  - System configuration updated');
     }
 
@@ -110,10 +122,11 @@ export async function migrateToDatabase(): Promise<boolean> {
       const usernames = Object.keys(settings.userConfigs);
       console.log(`Migrating ${usernames.length} user configurations...`);
       for (const [username, config] of Object.entries(settings.userConfigs)) {
-        await userConfigRepo.update(username, {
-          routing: config.routing,
-          additionalConfig: config as any,
-        });
+        const userConfig = {
+          routing: config.routing || {},
+          additionalConfig: config,
+        };
+        await userConfigRepo.update(username, userConfig);
         console.log(`  - Updated configuration for user: ${username}`);
       }
     }

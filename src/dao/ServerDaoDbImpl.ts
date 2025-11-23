@@ -108,10 +108,25 @@ export class ServerDaoDbImpl implements ServerDao {
     return result !== null;
   }
 
-  private mapToServerConfig(server: any): ServerConfigWithName {
+  private mapToServerConfig(server: {
+    name: string;
+    type?: string;
+    url?: string;
+    command?: string;
+    args?: string[];
+    env?: Record<string, string>;
+    headers?: Record<string, string>;
+    enabled: boolean;
+    owner?: string;
+    keepAliveInterval?: number;
+    tools?: Record<string, { enabled: boolean; description?: string }>;
+    prompts?: Record<string, { enabled: boolean; description?: string }>;
+    options?: Record<string, any>;
+    oauth?: Record<string, any>;
+  }): ServerConfigWithName {
     return {
       name: server.name,
-      type: server.type,
+      type: server.type as 'stdio' | 'sse' | 'streamable-http' | 'openapi' | undefined,
       url: server.url,
       command: server.command,
       args: server.args,
