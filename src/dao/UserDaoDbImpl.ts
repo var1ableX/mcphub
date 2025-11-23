@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { UserDao, ServerConfigWithName } from './index.js';
+import { UserDao } from './index.js';
 import { IUser } from '../types/index.js';
 import { UserRepository } from '../db/repositories/UserRepository.js';
 

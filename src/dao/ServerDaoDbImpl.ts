@@ -1,5 +1,4 @@
 import { ServerDao, ServerConfigWithName } from './index.js';
-import { ServerConfig } from '../types/index.js';
 import { ServerRepository } from '../db/repositories/ServerRepository.js';
 
 /**

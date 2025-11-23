@@ -136,6 +136,35 @@ MCPHub can now act as an OAuth 2.0 authorization server, allowing external appli
 
 For detailed setup instructions, see the [OAuth Server Documentation](docs/oauth-server.md).
 
+### Database Mode (NEW - Container-Friendly)
+
+MCPHub now supports storing configuration in a PostgreSQL database instead of `mcp_settings.json`. This is ideal for containerized deployments where file mapping can be problematic.
+
+**Quick Start with Docker Compose:**
+
+```bash
+# Use the provided docker-compose file with PostgreSQL
+docker-compose -f docker-compose.db.yml up -d
+```
+
+**Benefits:**
+- ✅ No need to map configuration files in containers
+- ✅ Configuration persists in database, not filesystem
+- ✅ Perfect for multi-instance deployments
+- ✅ Easier backup and restore
+
+**Environment Variables:**
+```bash
+USE_DATABASE_DAO=true  # Enable database mode
+DB_URL=postgresql://user:password@host:5432/mcphub
+```
+
+📖 See the complete [Database Configuration Guide](docs/database-configuration.md) for:
+- Detailed setup instructions
+- Migration from file-based config
+- Backup and restore procedures
+- Troubleshooting tips
+
 ### Docker Deployment
 
 **Recommended**: Mount your custom config:
