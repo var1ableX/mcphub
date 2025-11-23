@@ -33,9 +33,9 @@ import { cleanupAllServers } from '../../src/services/mcpService.js';
 import { McpSettings, IUser } from '../../src/types/index.js';
 
 describe('Authentication Bypass Security Tests', () => {
-  let appServer: AppServer;
+  let _appServer: AppServer;
   let httpServer: Server;
-  let baseURL: string;
+  let _baseURL: string;
   let testServerHelper: TestServerHelper;
 
   // Test users defined in settings
@@ -107,9 +107,9 @@ describe('Authentication Bypass Security Tests', () => {
     testServerHelper = new TestServerHelper();
     const result = await testServerHelper.createTestServer(settings);
 
-    appServer = result.appServer;
+    _appServer = result.appServer;
     httpServer = result.httpServer;
-    baseURL = result.baseURL;
+    _baseURL = result.baseURL;
   }, 60000);
 
   afterAll(async () => {
