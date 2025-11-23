@@ -141,8 +141,8 @@ describe('Keepalive Functionality', () => {
     };
     (mcpService.getMcpServer as jest.Mock).mockReturnValue(mockMcpServer);
 
-    // Mock loadSettings
-    (configModule.loadSettings as jest.Mock).mockReturnValue({
+    // Mock loadSettings and loadOriginalSettings
+    const mockSettingsValue = {
       systemConfig: {
         routing: {
           enableGlobalRoute: true,
@@ -152,7 +152,9 @@ describe('Keepalive Functionality', () => {
         },
       },
       mcpServers: {},
-    });
+    };
+    (configModule.loadSettings as jest.Mock).mockReturnValue(mockSettingsValue);
+    (configModule.loadOriginalSettings as jest.Mock).mockReturnValue(mockSettingsValue);
 
     // Clear transports
     Object.keys(transports).forEach((key) => delete transports[key]);
