@@ -108,6 +108,23 @@ export function getDaoFactory(): DaoFactory {
 }
 
 /**
+ * Switch to database-backed DAOs based on environment variable
+ */
+export function initializeDaoFactory(): void {
+  const useDatabase = process.env.USE_DATABASE_DAO === 'true';
+  if (useDatabase) {
+    console.log('Using database-backed DAO implementations');
+    // Dynamically import to avoid circular dependencies
+    import('./DatabaseDaoFactory.js').then((module) => {
+      setDaoFactory(module.DatabaseDaoFactory.getInstance());
+    });
+  } else {
+    console.log('Using file-based DAO implementations');
+    setDaoFactory(JsonFileDaoFactory.getInstance());
+  }
+}
+
+/**
  * Convenience functions to get specific DAOs
  */
 export function getUserDao(): UserDao {
