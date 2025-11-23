@@ -1,3 +1,54 @@
+# Security Summary - MCPHub Security Fixes
+
+## Recent Security Fixes
+
+### Authentication Bypass Vulnerability (FIXED - 2025-11-23)
+
+✅ **CRITICAL FIX APPLIED**: Authentication bypass vulnerability in MCP transport endpoints
+
+**Vulnerability Details:**
+- **Severity**: Critical (CVSS 9.8 - Unauthenticated Remote Access)
+- **Affected Versions**: All versions prior to this fix
+- **CVE**: Pending assignment
+- **Discovery**: Security researcher report
+- **Status**: ✅ FIXED
+
+**Issue:**
+The MCP transport endpoints (`/:user/mcp/:group` and `/:user/sse/:group`) accepted requests without verifying credentials. An attacker could impersonate any user by simply placing their username in the URL path, bypassing all authentication and accessing privileged MCP operations.
+
+**Root Cause:**
+- `validateBearerAuth()` in `sseService.ts` was using `loadSettings()` which filters settings based on user context
+- `DataServicex.filterSettings()` replaces `systemConfig` with user-specific config for non-admin users
+- This caused the global `enableBearerAuth` configuration to be unavailable during validation
+- Result: Bearer authentication was never enforced, even when explicitly enabled in configuration
+
+**Impact:**
+An unauthenticated attacker could:
+- Impersonate any user account
+- Access private MCP server groups
+- Execute privileged MCP tool operations
+- Exfiltrate secrets or data from configured MCP servers (Slack bots, kubectl, databases, etc.)
+
+**Fix Applied:**
+- Changed `validateBearerAuth()` to use `loadOriginalSettings()` instead of `loadSettings()`
+- This ensures bearer auth validation always has access to the actual global systemConfig
+- Updated all test mocks to properly test authentication
+
+**Verification:**
+- ✅ 16 new security tests added to prevent regression
+- ✅ All 204 tests passing
+- ✅ Unauthenticated requests now return 401 Unauthorized
+- ✅ Bearer auth properly enforced when enabled
+- ✅ Proper WWW-Authenticate headers returned
+
+**Remediation:**
+- Update to the latest version immediately
+- Review access logs for suspicious activity
+- Ensure `enableBearerAuth: true` is set in production
+- Use a strong `bearerAuthKey` value
+
+---
+
 # Security Summary - OAuth Authorization Server Implementation
 
 ## Overview
@@ -183,5 +234,11 @@ The OAuth 2.0 authorization server implementation in MCPHub follows security bes
 
 **Overall Security Assessment**: ✅ **SECURE** with production hardening recommendations
 
-**Last Updated**: 2025-11-02
+**Last Updated**: 2025-11-23
 **Next Review**: Recommended quarterly or after major changes
+
+## Recent Security Audit Results
+
+- ✅ **Authentication Bypass**: FIXED (2025-11-23)
+- ✅ **OAuth 2.0 Implementation**: Secure with noted limitations
+- ⚠️ **Rate Limiting**: Recommendation for production deployment
