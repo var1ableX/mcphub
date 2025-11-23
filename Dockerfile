@@ -51,6 +51,11 @@ RUN pnpm frontend:build && pnpm build
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+# Environment variables for configuration
+# USE_DATABASE_DAO - Enable database-backed configuration (default: false)
+# DB_URL - PostgreSQL connection URL (e.g., postgresql://user:password@host:5432/dbname)
+# MCPHUB_SETTING_PATH - Custom path for mcp_settings.json (default: /app/mcp_settings.json)
+
 EXPOSE 3000
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
