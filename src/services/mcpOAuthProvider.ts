@@ -41,6 +41,71 @@ import {
 import { getServerByName } from './mcpService.js';
 
 /**
+ * Get system install base URL from settings
+ */
+export const getSystemInstallBaseUrl = (): string | undefined => {
+  const settings = loadSettings();
+  return settings.systemConfig?.install?.baseUrl;
+};
+
+/**
+ * Sanitize redirect URI by removing server parameter
+ */
+export const sanitizeRedirectUri = (input?: string): string | null => {
+  if (!input) {
+    return null;
+  }
+
+  try {
+    const url = new URL(input);
+    url.searchParams.delete('server');
+    const params = url.searchParams.toString();
+    url.search = params ? `?${params}` : '';
+    return url.toString();
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Build redirect URI from base URL
+ */
+export const buildRedirectUriFromBase = (baseUrl?: string): string | null => {
+  if (!baseUrl) {
+    return null;
+  }
+
+  const trimmed = baseUrl.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const normalizedBase = trimmed.endsWith('/') ? trimmed : `${trimmed}/`;
+    const redirect = new URL('oauth/callback', normalizedBase);
+    return sanitizeRedirectUri(redirect.toString());
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Get redirect URI from system configuration with fallback
+ * Priority: systemConfig.install.baseUrl > metadata.redirect_uris > default localhost:3000
+ */
+export const getRedirectUriFromSystemConfig = (
+  metadataRedirectUris?: string[],
+): string => {
+  const fallback = 'http://localhost:3000/oauth/callback';
+  const systemConfigured = buildRedirectUriFromBase(getSystemInstallBaseUrl());
+  const metadataConfigured = metadataRedirectUris?.[0]
+    ? sanitizeRedirectUri(metadataRedirectUris[0])
+    : null;
+
+  return systemConfigured ?? metadataConfigured ?? fallback;
+};
+
+/**
  * MCPHub OAuth Provider for server-side OAuth flows
  *
  * This provider handles OAuth authentication for upstream MCP servers.
@@ -58,57 +123,13 @@ export class MCPHubOAuthProvider implements OAuthClientProvider {
     this.serverConfig = serverConfig;
   }
 
-  private getSystemInstallBaseUrl(): string | undefined {
-    const settings = loadSettings();
-    return settings.systemConfig?.install?.baseUrl;
-  }
-
-  private sanitizeRedirectUri(input?: string): string | null {
-    if (!input) {
-      return null;
-    }
-
-    try {
-      const url = new URL(input);
-      url.searchParams.delete('server');
-      const params = url.searchParams.toString();
-      url.search = params ? `?${params}` : '';
-      return url.toString();
-    } catch {
-      return null;
-    }
-  }
-
-  private buildRedirectUriFromBase(baseUrl?: string): string | null {
-    if (!baseUrl) {
-      return null;
-    }
-
-    const trimmed = baseUrl.trim();
-    if (!trimmed) {
-      return null;
-    }
-
-    try {
-      const normalizedBase = trimmed.endsWith('/') ? trimmed : `${trimmed}/`;
-      const redirect = new URL('oauth/callback', normalizedBase);
-      return this.sanitizeRedirectUri(redirect.toString());
-    } catch {
-      return null;
-    }
-  }
-
   /**
    * Get redirect URL for OAuth callback
    */
   get redirectUrl(): string {
     const dynamicConfig = this.serverConfig.oauth?.dynamicRegistration;
     const metadata = dynamicConfig?.metadata || {};
-    const fallback = 'http://localhost:3000/oauth/callback';
-    const systemConfigured = this.buildRedirectUriFromBase(this.getSystemInstallBaseUrl());
-    const metadataConfigured = this.sanitizeRedirectUri(metadata.redirect_uris?.[0]);
-
-    return systemConfigured ?? metadataConfigured ?? fallback;
+    return getRedirectUriFromSystemConfig(metadata.redirect_uris);
   }
 
   /**
@@ -120,11 +141,11 @@ export class MCPHubOAuthProvider implements OAuthClientProvider {
 
     // Use redirectUrl getter to ensure consistent callback URL
     const redirectUri = this.redirectUrl;
-    const systemConfigured = this.buildRedirectUriFromBase(this.getSystemInstallBaseUrl());
+    const systemConfigured = buildRedirectUriFromBase(getSystemInstallBaseUrl());
     const metadataRedirects =
       metadata.redirect_uris && metadata.redirect_uris.length > 0
         ? metadata.redirect_uris
-            .map((uri) => this.sanitizeRedirectUri(uri))
+            .map((uri) => sanitizeRedirectUri(uri))
             .filter((uri): uri is string => Boolean(uri))
         : [];
     const redirectUris: string[] = [];

@@ -1,0 +1,37 @@
+services:
+  mcphub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # image: samanhappy/mcphub:latest  # Commented out - now building from source
+    container_name: mcphub_aggregator
+    restart: unless-stopped
+    
+    ports:
+      # Map Host Port (from .env) -> Container Port 3012
+      - "${MCPHUB_PORT:?Err: MCPHUB_PORT is missing}:3012"
+    
+    env_file:
+      - .env
+
+    environment:
+      # Internal App Config
+      - PORT=3012
+      - BASE_PATH=
+      - REQUEST_TIMEOUT=60000
+      
+      # Database Connection
+      # QUOTES added to prevent YAML parsing errors with the colon inside the string
+      - "POSTGRES_HOST=${POSTGRES_HOST:?Err: POSTGRES_HOST is missing}"
+      - "POSTGRES_PORT=${POSTGRES_PORT:?Err: POSTGRES_PORT is missing}"
+      - "POSTGRES_USER=${POSTGRES_USER:?Err: POSTGRES_USER is missing}"
+      - "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Err: POSTGRES_PASSWORD is missing}"
+      - "POSTGRES_DB=${MCPHUB_DB_NAME:?Err: MCPHUB_DB_NAME is missing}"
+
+    volumes:
+      - ./mcp_settings.json:/app/mcp_settings.json
+      - ./config:/app/config
+
+    # Networking Bridge
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

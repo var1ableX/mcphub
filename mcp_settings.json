@@ -1,14 +1,10 @@
 {
   "mcpServers": {
-    "amap": {
-      "command": "npx",
+    "fetch": {
+      "command": "uvx",
       "args": [
-        "-y",
-        "@amap/amap-maps-mcp-server"
-      ],
-      "env": {
-        "AMAP_MAPS_API_KEY": "your-api-key"
-      }
+        "mcp-server-fetch"
+      ]
     },
     "playwright": {
       "command": "npx",
@@ -17,32 +13,25 @@
         "--headless"
       ]
     },
-    "fetch": {
-      "command": "uvx",
-      "args": [
-        "mcp-server-fetch"
-      ]
-    },
-    "slack": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-slack"
-      ],
-      "env": {
-        "SLACK_BOT_TOKEN": "your-bot-token",
-        "SLACK_TEAM_ID": "your-team-id"
+    "langconnect-mcp": {
+      "type": "streamable-http",
+      "url": "http://host.docker.internal:8787/mcp",
+      "enabled": true,
+      "oauth": {
+        "clientId": "1532da47-a343-4c5b-9936-ee3a33cb0697",
+        "clientSecret": "acd63d48-bff6-4101-bb5d-a2fd390fc3cce7b60e46-37a8-4ce8-8041-9fb4226951d5",
+        "scopes": [
+          "openid"
+        ],
+        "accessToken": "69fe5d7549bbd29ffe00956f05ccd4c323a3174c481546e0b944f4991f9f3ca1",
+        "refreshToken": "6f31a567ad6308aac5c7e258c8353935a2668af41ccb1384fbffabb85666dd5e"
       }
     }
   },
-  "users": [
-    {
-      "username": "admin",
-      "password": "$2b$10$Vt7krIvjNgyN67LXqly0uOcTpN0LI55cYRbcKC71pUDAP0nJ7RPa.",
-      "isAdmin": true
-    }
-  ],
   "systemConfig": {
+    "install": {
+      "baseUrl": "http://localhost:3012"
+    },
     "oauthServer": {
       "enabled": true,
       "accessTokenLifetime": 3600,
@@ -63,5 +52,12 @@
         "requiresAuthentication": false
       }
     }
-  }
+  },
+  "users": [
+    {
+      "username": "admin",
+      "password": "$2b$10$U3OAZOEGhE4MAe5aGU.gh.ZJO2ztqzGHeqKW3OkAYk8mRCDx7gN5K",
+      "isAdmin": true
+    }
+  ]
 }

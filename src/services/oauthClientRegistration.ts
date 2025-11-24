@@ -16,6 +16,7 @@ import {
   persistClientCredentials,
   persistTokens,
 } from './oauthSettingsStore.js';
+import { getRedirectUriFromSystemConfig } from './mcpOAuthProvider.js';
 
 interface RegisteredClientInfo {
   config: client.Configuration;
@@ -259,9 +260,14 @@ export const registerClient = async (
       scopeValue = 'openid';
     }
 
+    // Build redirect URIs: use metadata if provided, otherwise get from system config
+    const redirectUris = metadata.redirect_uris || [
+      getRedirectUriFromSystemConfig(metadata.redirect_uris),
+    ];
+
     const clientMetadata: Partial<client.ClientMetadata> = {
       client_name: metadata.client_name || `MCPHub - ${serverName}`,
-      redirect_uris: metadata.redirect_uris || ['http://localhost:3000/oauth/callback'],
+      redirect_uris: redirectUris,
       grant_types: metadata.grant_types || ['authorization_code', 'refresh_token'],
       response_types: metadata.response_types || ['code'],
       token_endpoint_auth_method: metadata.token_endpoint_auth_method || 'client_secret_post',
