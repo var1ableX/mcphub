@@ -35,3 +35,11 @@ services:
     # Networking Bridge
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+    networks:
+      - langconnect-network
+
+networks:
+  langconnect-network:
+    external: true
+    name: langconnect_default
