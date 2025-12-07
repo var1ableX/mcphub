@@ -1,0 +1,64 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--headless"
+      ]
+    },
+    "langconnect-mcp": {
+      "type": "streamable-http",
+      "url": "http://host.docker.internal:8787/mcp",
+      "enabled": true,
+      "oauth": {
+        "clientId": "1532da47-a343-4c5b-9936-ee3a33cb0697",
+        "clientSecret": "acd63d48-bff6-4101-bb5d-a2fd390fc3cce7b60e46-37a8-4ce8-8041-9fb4226951d5",
+        "scopes": [
+          "openid"
+        ],
+        "accessToken": "0d1d31625a8cad9087ba9662c456cfc9a0bcea1d2f22866d67e191620fa4fd4a",
+        "refreshToken": "cb8b75ac10385d6a1eb89c6f650a266625c50e84a3ce2a15988155afdcea98fb"
+      },
+      "owner": "admin"
+    }
+  },
+  "systemConfig": {
+    "install": {
+      "baseUrl": "http://localhost:3012"
+    },
+    "oauthServer": {
+      "enabled": true,
+      "accessTokenLifetime": 3600,
+      "refreshTokenLifetime": 1209600,
+      "authorizationCodeLifetime": 300,
+      "requireClientSecret": false,
+      "allowedScopes": [
+        "read",
+        "write"
+      ],
+      "requireState": false,
+      "dynamicRegistration": {
+        "enabled": true,
+        "allowedGrantTypes": [
+          "authorization_code",
+          "refresh_token"
+        ],
+        "requiresAuthentication": false
+      }
+    }
+  },
+  "users": [
+    {
+      "username": "admin",
+      "password": "$2b$10$U3OAZOEGhE4MAe5aGU.gh.ZJO2ztqzGHeqKW3OkAYk8mRCDx7gN5K",
+      "isAdmin": true
+    }
+  ]
+}

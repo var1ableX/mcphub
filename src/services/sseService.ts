@@ -506,8 +506,10 @@ export const handleMcpPostRequest = async (req: Request, res: Response): Promise
       }
     } else {
       // Session rebuild is disabled, return error
-      console.warn(
-        `[SESSION ERROR] Session ${sessionId} not found and session rebuild is disabled${username ? ` for user: ${username}` : ''}`,
+      // This is expected behavior when sessions expire or server restarts.
+      // Clients should handle this by creating a new session via an initialize request.
+      console.info(
+        `[SESSION INFO] Session ${sessionId} not found (expected when sessions expire or server restarts). Session rebuild is disabled. Client should create a new session.${username ? ` User: ${username}` : ''}`,
       );
       res.status(400).json({
         jsonrpc: '2.0',
@@ -702,6 +704,9 @@ export const handleMcpOtherRequest = async (req: Request, res: Response) => {
   let transportEntry = transports[sessionId];
 
   // If session doesn't exist, attempt transparent rebuild if enabled
+  // This can happen when sessions expire, server restarts, or clients use stale session IDs.
+  // If session rebuild is enabled, we'll automatically recreate the session.
+  // If disabled, we return an error and the client should create a new session.
   if (!transportEntry) {
     const settings = loadSettings();
     const enableSessionRebuild = settings.systemConfig?.enableSessionRebuild || false;
@@ -731,8 +736,10 @@ export const handleMcpOtherRequest = async (req: Request, res: Response) => {
         console.error(`[SESSION AUTO-REBUILD] Failed to rebuild session ${sessionId}:`, error);
       }
     } else {
-      console.warn(
-        `[SESSION ERROR] Session ${sessionId} not found and session rebuild is disabled in handleMcpOtherRequest`,
+      // Session rebuild is disabled - this is expected behavior when sessions expire or server restarts.
+      // Clients should handle this by creating a new session via an initialize request.
+      console.info(
+        `[SESSION INFO] Session ${sessionId} not found (expected when sessions expire or server restarts). Session rebuild is disabled. Client should create a new session.`,
       );
       res.status(400).send('Invalid or missing session ID');
       return;

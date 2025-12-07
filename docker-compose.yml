@@ -19,6 +19,7 @@ services:
       - PORT=3012
       - BASE_PATH=
       - REQUEST_TIMEOUT=60000
+      - MCPHUB_SETTING_PATH=/app/project-config/mcp_settings.json
       
       # Database Connection
       # QUOTES added to prevent YAML parsing errors with the colon inside the string
@@ -29,7 +30,7 @@ services:
       - "POSTGRES_DB=${MCPHUB_DB_NAME:?Err: MCPHUB_DB_NAME is missing}"
 
     volumes:
-      - ./mcp_settings.json:/app/mcp_settings.json
+      - ./:/app/project-config  # Mount entire project to avoid file bind mount issue
       - ./config:/app/config
 
     # Networking Bridge
